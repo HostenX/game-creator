@@ -1,27 +1,30 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
 function App() {
-  const [usuario, setUsuario] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [usuario, setUsuario] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setMessage('');
+    setError("");
+    setMessage("");
 
     try {
-      const response = await axios.post('https://tu-api-url.com/login', {
-        usuario,
-        password,
-      });
+      const response = await axios.post(
+        "https://localhost:7057/api/Usuario/login",
+        {
+          nombreUsuario: usuario, // Asegúrate de usar los mismos nombres de campos que en tu backend
+          password,
+        }
+      );
 
-      setMessage('Login exitoso');
-      localStorage.setItem('token', response.data.token);
+      setMessage("Login exitoso");
+      localStorage.setItem("token", response.data.token); // Puedes guardar el token en localStorage si usas JWT
     } catch (err) {
-      setError('Credenciales incorrectas o error en la conexión');
+      setError("Credenciales incorrectas o error en la conexión");
     }
   };
 
@@ -48,8 +51,8 @@ function App() {
           />
         </div>
         <button type="submit">Login</button>
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {message && <p style={{ color: 'green' }}>{message}</p>}
+        {error && <p style={{ color: "red" }}>{error}</p>}
+        {message && <p style={{ color: "green" }}>{message}</p>}
       </form>
     </div>
   );
