@@ -1,13 +1,12 @@
+// index.js o App.js
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
-import { AuthProvider } from './Contexts/AuthContext'; // Asegúrate de importar el proveedor
+import { AuthProvider } from './Contexts/AuthContext';
 
 ReactDOM.render(
-    <React.StrictMode>
-        <AuthProvider>
-            <App />
-        </AuthProvider>
-    </React.StrictMode>,
+    <AuthProvider>
+        <App />
+    </AuthProvider>,
     document.getElementById('root')
 );

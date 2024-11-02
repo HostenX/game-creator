@@ -26,8 +26,11 @@ const LoginForm = () => {
         try {
             const response = await loginUser(formData);
             if (response.success) {
-                setUser(response.user); // Guarda el usuario en el contexto
-                navigate('/dashboard'); // Redirigir a la página del dashboard
+                console.log(formData.nombreUsuario);
+                console.log(response);
+                // Guarda el rol y otra información relevante en el contexto de usuario
+                setUser({ nombreUsuario: formData.nombreUsuario, rolId: response.rolId });
+                navigate('/dashboard'); // Redirigir al dashboard
             } else {
                 setMessage(response.message || 'Error en el login');
                 setIsSuccess(false);
@@ -37,6 +40,7 @@ const LoginForm = () => {
             setIsSuccess(false);
         }
     };
+    
 
     return (
         <div>

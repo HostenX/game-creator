@@ -1,24 +1,24 @@
-// src/pages/Dashboard.js
-
 import React, { useContext } from 'react';
 import { AuthContext } from '../Contexts/AuthContext';
+import StudentDashboard from './StudentDashboard';
+import TeacherDashboard from './TeacherDashboard';
+import AdminDashboard from './AdminDashboard';
 
 const Dashboard = () => {
     const { user } = useContext(AuthContext);
 
     if (!user) {
-        // Manejar el caso donde no hay usuario autenticado
         return <div>Acceso denegado. Debes iniciar sesión.</div>;
     }
 
     // Renderiza contenido basado en el rol del usuario
-    switch (user.rol_id) {
+    switch (user.rolId) {
         case 1:
-            return <div>Bienvenido, Estudiante!</div>;
+            return <StudentDashboard />;
         case 2:
-            return <div>Bienvenido, Docente!</div>;
+            return <TeacherDashboard />;
         case 3:
-            return <div>Bienvenido, Administrador!</div>;
+            return <AdminDashboard />;
         default:
             return <div>Rol desconocido.</div>;
     }
