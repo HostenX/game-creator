@@ -1,105 +1,119 @@
-import React, { useState } from 'react';
-import { registerStudent } from '../../Services/apiService';
+import React, { useState } from "react";
+import { registerStudent } from "../../Services/apiService";
+import CryptoJS from 'crypto-js'; // Asegúrate de instalar crypto-js con `npm install crypto-js`
+import "./StudentRegistrationForm.css";
 
 const RegisterStudentForm = () => {
-    const [formData, setFormData] = useState({
-        nombreUsuario: '',
-        nombreCompleto: '',
-        contrasena: '',
-        curso: ''
+  const [formData, setFormData] = useState({
+    nombreUsuario: "",
+    nombreCompleto: "",
+    contrasena: "",
+    curso: "",
+  });
+  const [message, setMessage] = useState("");
+  const [isSuccess, setIsSuccess] = useState(null);
+
+  // Función para hash de la contraseña
+  const hashPassword = (password) => {
+    return CryptoJS.SHA256(password).toString(CryptoJS.enc.Hex);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
     });
-    const [message, setMessage] = useState('');
-    const [isSuccess, setIsSuccess] = useState(null); // Para controlar si es un mensaje de éxito o error.
+  };
 
-    const handleInputChange = (e) => {
-        const { name, value } = e.target;
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Hashear la contraseña antes de enviarla
+    const hashedFormData = {
+      ...formData,
+      contrasena: hashPassword(formData.contrasena),
+    };
+
+    try {
+      const response = await registerStudent(hashedFormData);
+      console.log(response.success);
+
+      if (response.success) {
+        setMessage(response.message || "Estudiante registrado con éxito");
+        setIsSuccess(true);
         setFormData({
-            ...formData,
-            [name]: value
+          UsuarioId: "",
+          nombreUsuario: "",
+          nombreCompleto: "",
+          contrasena: "",
+          curso: "",
         });
-    };
+      } else {
+        setMessage(response.message || "Error en el registro. Verifica los datos ingresados");
+        setIsSuccess(false);
+      }
+    } catch (error) {
+      setMessage("Error en la conexión con el servidor");
+      setIsSuccess(false);
+    }
+  };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const response = await registerStudent(formData);
-            console.log(response.success); // Para verificar qué datos devuelve la API
-            
-            // Verifica si la respuesta es exitosa
-            if (response.success) {
-                setMessage(response.message || 'Estudiante registrado con éxito'); // Muestra el mensaje de éxito
-                setIsSuccess(true); // Marca como éxito
-                // Limpiar formulario si es necesario
-                setFormData({
-                    UsuarioId: '',
-                    nombreUsuario: '',
-                    nombreCompleto: '',
-                    contrasena: '',
-                    curso: ''
-                });
-            } else {
-                // Si la respuesta no tiene `success` como true, muestra el mensaje de error
-                setMessage(response.message || 'Error en el registro. Verifica los datos ingresados');
-                setIsSuccess(false); // Marca como error
-            }
-        } catch (error) {
-            setMessage('Error en la conexión con el servidor');
-            setIsSuccess(false);
-        }
-    };
-    
-    
-    
+  return (
+    <div id="register-student-form-container">
+      <h2 id="form-title">Registro de Estudiante</h2>
+      <form id="register-student-form" onSubmit={handleSubmit}>
+        <input
+          type="number"
+          id="input-usuario-id"
+          name="UsuarioId"
+          placeholder="Identificacion (CC / TI)"
+          value={formData.UsuarioId}
+          onChange={handleInputChange}
+        />
+        <input
+          type="text"
+          id="input-nombre-usuario"
+          name="nombreUsuario"
+          placeholder="Nombre de Usuario"
+          value={formData.nombreUsuario}
+          onChange={handleInputChange}
+        />
+        <input
+          type="text"
+          id="input-nombre-completo"
+          name="nombreCompleto"
+          placeholder="Nombre Completo"
+          value={formData.nombreCompleto}
+          onChange={handleInputChange}
+        />
+        <input
+          type="password"
+          id="input-contrasena"
+          name="contrasena"
+          placeholder="Contraseña"
+          value={formData.contrasena}
+          onChange={handleInputChange}
+        />
+        <input
+          type="text"
+          id="input-curso"
+          name="curso"
+          placeholder="Curso"
+          value={formData.curso}
+          onChange={handleInputChange}
+        />
+        <button id="submit-button" type="submit">Registrar</button>
+      </form>
 
-    return (
-        <div>
-            <h2>Registro de Estudiante</h2>
-            <form onSubmit={handleSubmit}>
-                <input
-                    type="number"
-                    name="UsuarioId"
-                    placeholder="Identificacion (CC / TI)"
-                    value={formData.UsuarioId}
-                    onChange={handleInputChange}
-                />
-                <input
-                    type="text"
-                    name="nombreUsuario"
-                    placeholder="Nombre de Usuario"
-                    value={formData.nombreUsuario}
-                    onChange={handleInputChange}
-                />
-                <input
-                    type="text"
-                    name="nombreCompleto"
-                    placeholder="Nombre Completo"
-                    value={formData.nombreCompleto}
-                    onChange={handleInputChange}
-                />
-                <input
-                    type="password"
-                    name="contrasena"
-                    placeholder="Contraseña"
-                    value={formData.contrasena}
-                    onChange={handleInputChange}
-                />
-                <input
-                    type="text"
-                    name="curso"
-                    placeholder="Curso"
-                    value={formData.curso}
-                    onChange={handleInputChange}
-                />
-                <button type="submit">Registrar</button>
-            </form>
-
-            {message && (
-                <p style={{ color: isSuccess ? 'green' : 'red' }}>
-                    {message}
-                </p>
-            )}
-        </div>
-    );
+      {message && (
+        <p id="form-message" style={{ color: isSuccess ? "green" : "red" }}>{message}</p>
+      )}
+      <p id="login-link">
+        ¿Ya tienes una cuenta? <a href="/login">Inicia sesion aquí</a>
+      </p>
+    </div>
+  );
 };
 
 export default RegisterStudentForm;

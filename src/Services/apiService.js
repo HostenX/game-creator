@@ -68,3 +68,55 @@ export const deleteUser = async (id) => {
         return { success: false, message: 'Error al eliminar usuario' }; // Manejo de errores
     }
 };
+
+export const getTeachers = async () => {
+    try {
+      const response = await axios.get(`${apiUrl}/api/Usuario/teachers`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al obtener docentes:', error);
+      if (error.response) {
+        // Manejar errores de respuesta del servidor
+        const { status, data } = error.response;
+        throw new Error(`Error al obtener docentes: ${status} - ${data.message}`);
+      } else if (error.request) {
+        // Manejar errores de solicitud
+        throw new Error('Error de red al obtener docentes');
+      } else {
+        // Manejar otros errores
+        throw new Error('Error inesperado al obtener docentes');
+      }
+    }
+  };
+
+export const updateTeacher = async (id, teacherData) => {
+    try {
+        const response = await axios.put(`${apiUrl}/api/Usuario/update-teacher/${id}`, teacherData);
+        return response.data; // Devolver el resultado
+    } catch (error) {
+        console.error('Error al actualizar docente:', error);
+        throw error; // Propagar el error
+    }
+};
+
+// Función para obtener todos los administradores
+export const getAdmins = async () => {
+    try {
+        const response = await axios.get(`${apiUrl}/api/Usuario/admins`); // Asegúrate de que tu API tenga esta ruta
+        return response.data;
+    } catch (error) {
+        console.error('Error al obtener administradores:', error);
+        return []; // Devuelve un array vacío en caso de error
+    }
+};
+
+// Función para actualizar administradores
+export const updateAdmin = async (id, adminData) => {
+    try {
+        const response = await axios.put(`${apiUrl}/api/Usuario/update-admin/${id}`, adminData); // Asegúrate de que tu API soporte esta ruta
+        return response.data; // Devolver el resultado
+    } catch (error) {
+        console.error('Error al actualizar administrador:', error);
+        throw error; // Propagar el error
+    }
+};

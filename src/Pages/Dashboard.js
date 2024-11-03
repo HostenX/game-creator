@@ -3,6 +3,8 @@ import { AuthContext } from '../Contexts/AuthContext';
 import StudentDashboard from './StudentDashboard';
 import TeacherDashboard from './TeacherDashboard';
 import AdminDashboard from './AdminDashboard';
+import './Dashboard.css'; 
+
 
 const Dashboard = () => {
     const { user } = useContext(AuthContext);

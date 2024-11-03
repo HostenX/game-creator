@@ -1,0 +1,62 @@
+#register-student-form-container {
+    margin: 0 auto;
+    max-width: 450px;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+#form-title {
+    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+#register-student-form {
+    display: flex;
+    flex-direction: column;
+}
+
+#register-student-form input {
+    margin-bottom: 15px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+#submit-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+#submit-button:hover {
+    background-color: #0056b3;
+}
+
+#form-message {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 14px;
+}
+#login-link {
+    margin-top: 15px;
+    text-align: center;
+  }
+  
+  #login-link a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  #login-link a:hover {
+    text-decoration: underline;
+  }

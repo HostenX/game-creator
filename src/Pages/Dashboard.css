@@ -1,0 +1,80 @@
+#admin-dashboard-container {
+    margin: 20px auto;
+    max-width: 800px;
+    padding: 20px;
+    background-color: #f2f2f2;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+#teacher-section-title,
+#admin-section-title {
+    text-align: center;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+input {
+    margin: 5px 0;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#admin-dashboard-container button {
+    background-color: #5cb85c;
+    color: white;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+#admin-dashboard-container button:hover {
+    background-color: #4cae4c;
+}
+
+#teacher-table,
+#admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+#teacher-table th,
+#admin-table th,
+#teacher-table td,
+#admin-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#teacher-table th,
+#admin-table th {
+    background-color: #f8f8f8;
+}
+
+#teacher-table tr:nth-child(even),
+#admin-table tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+#teacher-table tr:hover,
+#admin-table tr:hover {
+    background-color: #f1f1f1;
+}
+
+#admin-dashboard-message {
+    color: #d9534f;
+    text-align: center;
+    margin-bottom: 10px;
+}
