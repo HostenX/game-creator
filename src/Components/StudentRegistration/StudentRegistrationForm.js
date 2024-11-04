@@ -9,6 +9,7 @@ const RegisterStudentForm = () => {
     nombreCompleto: "",
     contrasena: "",
     curso: "",
+    correoElectronico: "", // Cambiado a correoElectronico
   });
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(null);
@@ -48,6 +49,7 @@ const RegisterStudentForm = () => {
           nombreCompleto: "",
           contrasena: "",
           curso: "",
+          correoElectronico: "", // Reiniciar el campo de correo electrónico
         });
       } else {
         setMessage(response.message || "Error en el registro. Verifica los datos ingresados");
@@ -67,7 +69,7 @@ const RegisterStudentForm = () => {
           type="number"
           id="input-usuario-id"
           name="UsuarioId"
-          placeholder="Identificacion (CC / TI)"
+          placeholder="Identificación (CC / TI)"
           value={formData.UsuarioId}
           onChange={handleInputChange}
         />
@@ -103,6 +105,14 @@ const RegisterStudentForm = () => {
           value={formData.curso}
           onChange={handleInputChange}
         />
+        <input
+          type="email"
+          id="input-correo-electronico"
+          name="correoElectronico"
+          placeholder="Correo Electrónico"
+          value={formData.correoElectronico}
+          onChange={handleInputChange}
+        />
         <button id="submit-button" type="submit">Registrar</button>
       </form>
 
@@ -110,7 +120,7 @@ const RegisterStudentForm = () => {
         <p id="form-message" style={{ color: isSuccess ? "green" : "red" }}>{message}</p>
       )}
       <p id="login-link">
-        ¿Ya tienes una cuenta? <a href="/login">Inicia sesion aquí</a>
+        ¿Ya tienes una cuenta? <a href="/login">Inicia sesión aquí</a>
       </p>
     </div>
   );

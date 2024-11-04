@@ -120,3 +120,13 @@ export const updateAdmin = async (id, adminData) => {
         throw error; // Propagar el error
     }
 };
+// Función para enviar un informe por correo electrónico
+export const sendEmailReport = async (recipientEmail) => {
+    try {
+        const response = await axios.post(`${apiUrl}/api/Usuario/send-report`, { recipientEmail: recipientEmail });
+        return response.data;
+    } catch (error) {
+        console.error('Error al enviar el informe:', error);
+        throw error;
+    }
+};
