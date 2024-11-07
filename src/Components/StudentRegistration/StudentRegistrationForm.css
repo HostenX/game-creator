@@ -1,62 +1,78 @@
+/* StudentRegistrationForm.css */
+
+/* Contenedor principal del formulario de registro */
 #register-student-form-container {
-    margin: 0 auto;
-    max-width: 450px;
-    background-color: #f9f9f9;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    background-color: #2c2f36; /* Fondo oscuro */
+    padding: 40px;
+    border-radius: 15px;
+    max-width: 600px;
+    margin: 50px auto;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Título del formulario */
 #form-title {
-    font-family: 'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
+    color: #f0c14b; /* Amarillo */
     text-align: center;
-    color: #333;
     margin-bottom: 20px;
 }
 
-#register-student-form {
-    display: flex;
-    flex-direction: column;
-}
-
-#register-student-form input {
+/* Campos de entrada */
+#register-student-form input[type="text"],
+#register-student-form input[type="password"],
+#register-student-form input[type="number"],
+#register-student-form input[type="email"] {
+    width: 100%;
+    padding: 10px;
     margin-bottom: 15px;
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
+    border: 1px solid #444;
     border-radius: 5px;
-    box-sizing: border-box;
+    background-color: #20232a;
+    color: #e6e6e6;
+    outline: none;
+    transition: border-color 0.3s;
 }
 
+#register-student-form input:focus {
+    border-color: #f0c14b; /* Amarillo al enfocar */
+}
+
+/* Botón de envío */
 #submit-button {
-    background-color: #007bff;
-    color: white;
+    background-color: #f0c14b; /* Amarillo */
     border: none;
-    padding: 10px;
+    color: #20232a; /* Texto oscuro */
+    padding: 12px 20px;
+    width: 100%;
     border-radius: 5px;
     cursor: pointer;
     font-size: 16px;
+    transition: background 0.3s;
 }
 
 #submit-button:hover {
-    background-color: #0056b3;
+    background-color: #d6a838; /* Amarillo más oscuro al pasar el cursor */
 }
 
+/* Mensaje de feedback */
 #form-message {
     margin-top: 15px;
     text-align: center;
-    font-size: 14px;
+    font-weight: bold;
 }
+
+/* Enlace a iniciar sesión */
 #login-link {
-    margin-top: 15px;
+    margin-top: 20px;
     text-align: center;
-  }
-  
-  #login-link a {
-    color: #007bff;
+    color: #e6e6e6;
+}
+
+#login-link a {
+    color: #f0c14b; /* Amarillo */
     text-decoration: none;
-  }
-  
-  #login-link a:hover {
+}
+
+#login-link a:hover {
     text-decoration: underline;
-  }
+}

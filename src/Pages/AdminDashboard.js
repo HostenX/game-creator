@@ -266,6 +266,11 @@ const AdminDashboard = () => {
                     ))}
                 </tbody>
             </table>
+            
+ {/* Botón para mostrar el input de correo electrónico */}
+            <button id="send-report-button" onClick={() => setShowEmailInput(!showEmailInput)}>
+                Enviar informe de usuarios
+            </button>
 
             {showEmailInput && (
                 <div>

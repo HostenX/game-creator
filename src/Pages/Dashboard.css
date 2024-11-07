@@ -1,80 +1,98 @@
+/* Dashboard.css */
+body{
+    background-color: #20232a;
+}
+/* Estilo general */
 #admin-dashboard-container {
-    margin: 20px auto;
-    max-width: 800px;
+    background-color: #20232a; /* Fondo oscuro */
+    color: #e6e6e6; /* Texto claro */
+    font-family: 'Arial', sans-serif;
     padding: 20px;
-    background-color: #f2f2f2;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    font-family: Arial, Helvetica, sans-serif;
+    border-radius: 10px;
 }
 
-#teacher-section-title,
-#admin-section-title {
-    text-align: center;
-    color: #333;
-    margin-bottom: 15px;
+/* Títulos */
+h2, h3 {
+    color: #ffcc00; /* Color dorado para resaltar */
+    border-bottom: 2px solid #444; /* Subrayado ligero */
+    margin-bottom: 10px;
 }
 
+/* Formularios */
 form {
-    display: flex;
-    flex-direction: column;
+    background-color: #2c2f36; /* Fondo del formulario */
+    padding: 15px;
+    border-radius: 8px;
     margin-bottom: 20px;
 }
 
-input {
-    margin: 5px 0;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-
-#admin-dashboard-container button {
-    background-color: #5cb85c;
-    color: white;
-    padding: 8px;
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    background-color: #444;
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
+    padding: 10px;
+    color: #fff;
+    margin: 5px 0;
+    width: calc(100% - 22px); /* Ajuste para el padding */
+}
+
+input::placeholder {
+    color: #aaa;
+}
+
+button {
+    background-color: #ffcc00;
+    border: none;
+    padding: 10px 15px;
+    margin-right: 5px;
+    color: #20232a;
+    border-radius: 5px;
     cursor: pointer;
-    margin-top: 5px;
+    transition: background 0.3s;
 }
 
-#admin-dashboard-container button:hover {
-    background-color: #4cae4c;
+button:hover {
+    background-color: #e6b800;
 }
 
-#teacher-table,
-#admin-table {
+#send-report-button {
+    background-color: #007acc; /* Azul brillante */
+    color: #fff;
+}
+
+/* Tablas */
+table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 10px;
+    margin-bottom: 20px;
 }
 
-#teacher-table th,
-#admin-table th,
-#teacher-table td,
-#admin-table td {
-    border: 1px solid #ddd;
-    padding: 8px;
+th, td {
+    padding: 10px;
     text-align: left;
+    border-bottom: 1px solid #444;
 }
 
-#teacher-table th,
-#admin-table th {
-    background-color: #f8f8f8;
+th {
+    background-color: #333;
+    color: #ffcc00;
 }
 
-#teacher-table tr:nth-child(even),
-#admin-table tr:nth-child(even) {
-    background-color: #f9f9f9;
+tr:nth-child(even) {
+    background-color: #2c2f36;
 }
 
-#teacher-table tr:hover,
-#admin-table tr:hover {
-    background-color: #f1f1f1;
+tr:hover {
+    background-color: #3a3d44;
 }
 
+/* Mensajes */
 #admin-dashboard-message {
-    color: #d9534f;
-    text-align: center;
+    background-color: #333;
+    padding: 10px;
+    border-radius: 5px;
     margin-bottom: 10px;
+    color: #ffcc00;
 }

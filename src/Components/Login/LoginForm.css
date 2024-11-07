@@ -1,60 +1,80 @@
+/* LoginForm.css */
+
+body{
+  font-family: 'Arial', sans-serif;
+}
+/* Contenedor principal del formulario de inicio de sesión */
 #login-container {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 20px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  }
-  
-  #login-title {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  
-  #login-form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  #login-username,
-  #login-password {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
-  }
-  
-  #login-button {
-    background-color: #4caf50;
-    color: white;
-    border: none;
-    padding: 10px;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  #login-button:hover {
-    background-color: #45a049;
-  }
-  
-  #login-message {
-    margin-top: 15px;
-    text-align: center;
-  }
-  
-  #register-link {
-    margin-top: 15px;
-    text-align: center;
-  }
-  
-  #register-link a {
-    color: #007bff;
-    text-decoration: none;
-  }
-  
-  #register-link a:hover {
-    text-decoration: underline;
-  }
-  
+  background-color: #2c2f36; /* Fondo ligeramente más claro */
+  padding: 40px;
+  border-radius: 15px;
+  max-width: 400px;
+  margin: 50px auto;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Título del formulario */
+#login-title {
+  color: #f0c14b; /* Amarillo */
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Estilo de los campos de entrada */
+#login-form input[type="text"],
+#login-form input[type="password"] {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #444;
+  border-radius: 5px;
+  background-color: #20232a;
+  color: #e6e6e6;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+#login-form input[type="text"]:focus,
+#login-form input[type="password"]:focus {
+  border-color: #f0c14b; /* Amarillo al enfocar */
+}
+
+/* Botón de envío */
+#login-button {
+  background-color: #f0c14b; /* Amarillo */
+  border: none;
+  color: #20232a; /* Texto oscuro */
+  padding: 12px 20px;
+  width: 105%;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s;
+}
+
+#login-button:hover {
+  background-color: #d6a838; /* Amarillo más oscuro al pasar el cursor */
+}
+
+/* Mensaje de feedback */
+#login-message {
+  margin-top: 15px;
+  text-align: center;
+  font-weight: bold;
+}
+
+/* Enlace de registro */
+#register-link {
+  margin-top: 20px;
+  text-align: center;
+  color: #e6e6e6;
+}
+
+#register-link a {
+  color: #f0c14b; /* Amarillo */
+  text-decoration: none;
+}
+
+#register-link a:hover {
+  text-decoration: underline;
+}
