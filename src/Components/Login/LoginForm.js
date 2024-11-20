@@ -25,24 +25,24 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Hashear la contraseña antes de enviarla
+  
     const hashedPassword = CryptoJS.SHA256(formData.contrasena).toString(CryptoJS.enc.Hex);
-
+  
     const loginData = {
       ...formData,
       contrasena: hashedPassword,
     };
-
+  
     try {
       const response = await loginUser(loginData);
       if (response.success) {
         console.log(formData.nombreUsuario);
         console.log(response);
-        // Guarda el rol y otra información relevante en el contexto de usuario
+        // Guarda el token en el contexto de usuario
         setUser({
           nombreUsuario: formData.nombreUsuario,
           rolId: response.rolId,
+          token: response.token,  // Guardar el token JWT
         });
         navigate("/dashboard"); // Redirigir al dashboard
       } else {
@@ -54,6 +54,7 @@ const LoginForm = () => {
       setIsSuccess(false);
     }
   };
+  
 
   return (
     <div id="login-container">

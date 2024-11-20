@@ -1,132 +1,228 @@
-import axios from 'axios'; // Asegúrate de que esta línea esté presente
+import axios from "axios";
+import Config from "../config/routes";
 
-// Asegúrate de tener configurada la variable de entorno REACT_APP_API_URL
-const apiUrl = process.env.REACT_APP_API_URL;
+ // Importa la configuración
+
+const apiUrl = Config.apiUrl;
 
 // Función para iniciar sesión
 export const loginUser = async (formData) => {
-    try {
-        const response = await axios.post(`${apiUrl}/api/Usuario/login`, formData);
-        return response.data;
-    } catch (error) {
-        console.error('Error en la autenticación:', error);
-        return { success: false, message: 'Error en la autenticación' };
-    }
+  try {
+    const response = await axios.post(`${apiUrl}/api/Usuario/login`, formData);
+    return response.data;
+  } catch (error) {
+    console.error("Error en la autenticación:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error en la autenticación",
+    };
+  }
 };
 
 // Función para registrar estudiantes
 export const registerStudent = async (studentData) => {
-    try {
-        const response = await axios.post(`${apiUrl}/api/Usuario/register-student`, studentData);
-        return response.data;
-    } catch (error) {
-        console.error('Error en la llamada a la API:', error);
-        return { success: false };
-    }
+  try {
+    const response = await axios.post(
+      `${apiUrl}/api/Usuario/register-student`,
+      studentData
+    );
+    console.log("Respuesta completa de la API:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error en la llamada a la API:", error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message || "Error en la conexión con el servidor",
+    };
+  }
 };
 
 // Función para obtener todos los usuarios
 export const getUsuarios = async () => {
-    try {
-        const response = await axios.get(`${apiUrl}/api/Usuario`);
-        return response.data;
-    } catch (error) {
-        console.error('Error al obtener usuarios:', error);
-        return [];
-    }
+  try {
+    const response = await axios.get(`${apiUrl}/api/Usuario`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener usuarios:", error);
+    return { success: false, message: "Error al obtener usuarios" };
+  }
 };
 
 // Función para registrar docentes
 export const registerTeacher = async (data) => {
-    try {
-        const response = await axios.post(`${apiUrl}/api/Usuario/register-teacher`, data);
-        return response.data;
-    } catch (error) {
-        console.error('Error al registrar docente:', error);
-        return { success: false };
-    }
+  const actualUser = JSON.parse(localStorage.getItem("user"));
+  const token = actualUser.token;
+  try {
+    const response = await axios.post(
+      `${apiUrl}/api/Usuario/register-teacher`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error al registrar docente:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error al registrar docente",
+    };
+  }
 };
 
 // Función para registrar administradores
 export const registerAdmin = async (data) => {
-    try {
-        const response = await axios.post(`${apiUrl}/api/Usuario/register-admin`, data);
-        return response.data;
-    } catch (error) {
-        console.error('Error al registrar administrador:', error);
-        return { success: false };
-    }
-};
+  const actualUser = JSON.parse(localStorage.getItem("user"));
+  const token = actualUser.token; // Asegúrate de que el token esté almacenado en localStorage después del login
 
-export const deleteUser = async (id) => {
-    try {
-        const response = await axios.delete(`${apiUrl}/api/Usuario/${id}`);
-        console.log(response.data);
-        return response.data;
-    } catch (error) {
-        console.error('Error al eliminar usuario:', error);
-        return { success: false, message: 'Error al eliminar usuario' }; // Manejo de errores
-    }
-};
-
-export const getTeachers = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/api/Usuario/teachers`);
-      return response.data;
-    } catch (error) {
-      console.error('Error al obtener docentes:', error);
-      if (error.response) {
-        // Manejar errores de respuesta del servidor
-        const { status, data } = error.response;
-        throw new Error(`Error al obtener docentes: ${status} - ${data.message}`);
-      } else if (error.request) {
-        // Manejar errores de solicitud
-        throw new Error('Error de red al obtener docentes');
-      } else {
-        // Manejar otros errores
-        throw new Error('Error inesperado al obtener docentes');
+  try {
+    const response = await axios.post(
+      `${apiUrl}/api/Usuario/register-admin`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // Enviar el token en el header
+        },
       }
-    }
-  };
+    );
+    console.log(
+      "Respuesta completa de la API desde apiService:",
+      response.data
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error al registrar administrador:", error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message || "Error al registrar administrador",
+    };
+  }
+};
+// Función para eliminar usuario
+export const deleteUser = async (id) => {
+  const actualUser = JSON.parse(localStorage.getItem("user"));
+  const token = actualUser.token;
+  try {
+    const response = await axios.delete(`${apiUrl}/api/Usuario/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log(response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error al eliminar usuario:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error al eliminar usuario",
+    };
+  }
+};
 
+// Función para obtener todos los docentes
+export const getTeachers = async () => {
+  try {
+    const response = await axios.get(`${apiUrl}/api/Usuario/teachers`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener docentes:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error al obtener docentes",
+    };
+  }
+};
+
+// Función para actualizar docentes
 export const updateTeacher = async (id, teacherData) => {
-    try {
-        const response = await axios.put(`${apiUrl}/api/Usuario/update-teacher/${id}`, teacherData);
-        return response.data; // Devolver el resultado
-    } catch (error) {
-        console.error('Error al actualizar docente:', error);
-        throw error; // Propagar el error
-    }
+  const actualUser = JSON.parse(localStorage.getItem("user"));
+  const token = actualUser.token;
+  console.log(token);
+  try {
+    const response = await axios.put(
+      `${apiUrl}/api/Usuario/update-teacher/${id}`,
+      teacherData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error al actualizar docente:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error al actualizar docente",
+    };
+  }
 };
 
 // Función para obtener todos los administradores
 export const getAdmins = async () => {
-    try {
-        const response = await axios.get(`${apiUrl}/api/Usuario/admins`); // Asegúrate de que tu API tenga esta ruta
-        return response.data;
-    } catch (error) {
-        console.error('Error al obtener administradores:', error);
-        return []; // Devuelve un array vacío en caso de error
-    }
+  try {
+    const response = await axios.get(`${apiUrl}/api/Usuario/admins`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener administradores:", error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message || "Error al obtener administradores",
+    };
+  }
 };
 
 // Función para actualizar administradores
 export const updateAdmin = async (id, adminData) => {
-    try {
-        const response = await axios.put(`${apiUrl}/api/Usuario/update-admin/${id}`, adminData); // Asegúrate de que tu API soporte esta ruta
-        return response.data; // Devolver el resultado
-    } catch (error) {
-        console.error('Error al actualizar administrador:', error);
-        throw error; // Propagar el error
-    }
+  const actualUser = JSON.parse(localStorage.getItem("user"));
+  const token = actualUser.token;
+  try {
+    const response = await axios.put(
+      `${apiUrl}/api/Usuario/update-admin/${id}`,
+      adminData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error al actualizar administrador:", error);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message || "Error al actualizar administrador",
+    };
+  }
 };
+
 // Función para enviar un informe por correo electrónico
 export const sendEmailReport = async (recipientEmail) => {
-    try {
-        const response = await axios.post(`${apiUrl}/api/Usuario/send-report`, { recipientEmail: recipientEmail });
-        return response.data;
-    } catch (error) {
-        console.error('Error al enviar el informe:', error);
-        throw error;
-    }
+  const actualUser = JSON.parse(localStorage.getItem("user"));
+  const token = actualUser.token;
+  console.log("Token: ", token);
+  try {
+    const response = await axios.post(
+      `${apiUrl}/api/Usuario/send-report`,
+      { recipientEmail },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error al enviar el informe:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error al enviar el informe",
+    };
+  }
 };

@@ -128,6 +128,7 @@ const AdminDashboard = () => {
                     value={teacherData.usuarioId}
                     onChange={(e) => setTeacherData({ ...teacherData, usuarioId: e.target.value })}
                     placeholder="Cédula"
+                    disabled={selectedTeacher}
                     required
                 />
                 <input
@@ -202,6 +203,7 @@ const AdminDashboard = () => {
                     value={adminData.usuarioId}
                     onChange={(e) => setAdminData({ ...adminData, usuarioId: e.target.value })}
                     placeholder="Cédula"
+                    disabled={selectedAdmin}
                     required
                 />
                 <input

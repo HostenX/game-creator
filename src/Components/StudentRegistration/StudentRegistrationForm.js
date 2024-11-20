@@ -38,7 +38,8 @@ const RegisterStudentForm = () => {
 
     try {
       const response = await registerStudent(hashedFormData);
-      console.log(response.success);
+      // Verificar la estructura de la respuesta en la consola
+      console.log("Respuesta completa de la API:", response);
 
       if (response.success) {
         setMessage(response.message || "Estudiante registrado con éxito");
@@ -53,6 +54,7 @@ const RegisterStudentForm = () => {
         });
       } else {
         setMessage(response.message || "Error en el registro. Verifica los datos ingresados");
+        console.log(response);
         setIsSuccess(false);
       }
     } catch (error) {
