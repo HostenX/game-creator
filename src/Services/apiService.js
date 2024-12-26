@@ -5,6 +5,8 @@ import Config from "../config/routes";
 
 const apiUrl = Config.apiUrl;
 
+//========================Usuarios==============================
+
 // Función para iniciar sesión
 export const loginUser = async (formData) => {
   try {
@@ -224,5 +226,86 @@ export const sendEmailReport = async (recipientEmail) => {
       success: false,
       message: error.response?.data?.message || "Error al enviar el informe",
     };
+  }
+};
+
+//=========================================Minijuegos======================================
+// Obtener minijuegos por usuario
+export const getMinijuegosByUsuario = async (usuarioId) => {
+  try {
+    const response = await axios.get(`${apiUrl}/api/Minijuego/ByUsuario/${usuarioId}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error al obtener los minijuegos:", error);
+    return { success: false, message: "Error al obtener los minijuegos" };
+  }
+};
+
+// Crear o editar un minijuego
+export const saveMinijuego = async (minijuego) => {
+  try {
+    if (minijuego.MinijuegoId) {
+      const response = await axios.put(`${apiUrl}/api/Minijuego/${minijuego.MinijuegoId}`, minijuego);
+      return response.data;
+    } else {
+      const response = await axios.post(`${apiUrl}/api/Minijuego/RegistroMinijuego`, minijuego);
+      return response.data;
+    }
+  } catch (error) {
+    console.error("Error al guardar el minijuego:", error);
+    return { success: false, message: "Error al guardar el minijuego" };
+  }
+};
+
+// Función para crear Temático con Apoyo
+export const createTematicoWithApoyo = async (tematicoData) => {
+  try {
+    const response = await axios.post(`${apiUrl}/api/Tematico/CreateWithApoyo`, tematicoData);
+    return response.data;
+  } catch (error) {
+    console.error("Error al crear Temático con Apoyo:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error al crear Temático con Apoyo",
+    };
+  }
+};
+
+export const updateMinijuego = async (id, datos) => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Minijuego/EditarMinijuego/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(datos),
+    });
+    if (!response.ok) {
+      throw new Error("Error al editar el minijuego");
+    }
+    return await response.json();
+  } catch (error) {
+    console.error("Error en editarMinijuego:", error);
+    return { success: false, message: error.message };
+  }
+};
+
+
+export const deleteMinijuego = async (id) => {
+  const response = await fetch(`${apiUrl}/api/Minijuego/${id}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    throw new Error("Error al eliminar el minijuego");
+  }
+};
+
+export const changeEstadoMinijuego = async (id, estadoId) => {
+  try {
+    const response = await axios.patch(`${apiUrl}/api/Minijuego/ChangeEstado/${id}`, { estadoId });
+    return response.data;
+  } catch (error) {
+    console.error("Error al cambiar el estado del minijuego:", error);
+    throw error;
   }
 };

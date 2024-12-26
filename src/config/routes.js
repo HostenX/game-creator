@@ -1,8 +1,8 @@
 // IPs o URLs base
-const LOCAL_IP = "http://localhost:8090";
-const SERVER_IP = "https://192.168.43.48:8090"; // Cambia según tu configuración
-const API_LOCAL = "https://localhost:4450/GameAPI";
-const API_SERVER = "https://192.168.43.48:4450/GameAPI"; // Cambia según la IP del servidor
+const LOCAL_IP = "http://localhost:3000";
+const SERVER_IP = "https://192.168.43.48:3000"; // Cambia según tu configuración
+const API_LOCAL = "https://localhost:7193";
+const API_SERVER = "https://192.168.43.48:7193"; // Cambia según la IP del servidor
 
 // Detecta si estás en localhost
 const isLocalhost = window.location.hostname === "localhost";
