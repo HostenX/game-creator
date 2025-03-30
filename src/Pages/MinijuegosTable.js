@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { getMinijuegosByUsuario, updateMinijuego, deleteMinijuego } from "../Services/apiService";
+import {
+  getMinijuegosByUsuario,
+  updateMinijuego,
+  deleteMinijuego,
+} from "../Services/apiService";
 import EditMinijuegoModal from "./EditMinijuegoModal";
+
+import "./EditMinijuegoModal.css";  // <-- IMPORTANTE
+
 
 export const ESTADO_LABELS = {
   1: "Activo",
@@ -15,7 +22,9 @@ const MinijuegosTable = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [currentMinijuego, setCurrentMinijuego] = useState(null);
 
-  const usuarioId = JSON.parse(localStorage.getItem("user"))?.id;
+  // Obtener usuario de localStorage de forma segura
+  const usuarioData = localStorage.getItem("user");
+  const usuarioId = usuarioData ? JSON.parse(usuarioData).id : null;
 
   useEffect(() => {
     if (usuarioId) {
@@ -28,8 +37,10 @@ const MinijuegosTable = () => {
     setError(null);
     try {
       const data = await getMinijuegosByUsuario(usuarioId);
-      if (data && Array.isArray(data.$values)) {
+      if (data?.$values && Array.isArray(data.$values)) {
         setMinijuegos(data.$values);
+      } else if (Array.isArray(data)) {
+        setMinijuegos(data);
       } else {
         throw new Error("Respuesta de API inválida");
       }
@@ -54,6 +65,7 @@ const MinijuegosTable = () => {
           m.minijuegoId === updatedMinijuego.minijuegoId ? updatedMinijuego : m
         )
       );
+      setIsEditing(false);
     } catch (error) {
       console.error("Error al guardar cambios:", error);
       setError("No se pudo guardar los cambios.");
@@ -61,7 +73,9 @@ const MinijuegosTable = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar este minijuego?")) {
+    if (
+      window.confirm("¿Estás seguro de que deseas eliminar este minijuego?")
+    ) {
       try {
         await deleteMinijuego(id);
         setMinijuegos((prev) =>
@@ -101,10 +115,20 @@ const MinijuegosTable = () => {
               <tr key={minijuego.minijuegoId || `key-${minijuego.titulo}`}>
                 <td>{minijuego.titulo}</td>
                 <td>{minijuego.descripcion}</td>
-                <td>{ESTADO_LABELS[minijuego.estadoId]}</td>
+                <td>{ESTADO_LABELS[minijuego.estadoId] || "Desconocido"}</td>
                 <td>
-                  <button onClick={() => handleEdit(minijuego)}>Editar</button>
-                  <button onClick={() => handleDelete(minijuego.minijuegoId)}>Borrar</button>
+                  <button
+                    onClick={() => handleEdit(minijuego)}
+                    aria-label={`Editar ${minijuego.titulo}`}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    onClick={() => handleDelete(minijuego.minijuegoId)}
+                    aria-label={`Eliminar ${minijuego.titulo}`}
+                  >
+                    Borrar
+                  </button>
                 </td>
               </tr>
             ))}
