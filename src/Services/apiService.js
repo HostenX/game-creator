@@ -1,5 +1,6 @@
 import axios from "axios";
 import Config from "../config/routes";
+import sha256 from "crypto-js/sha256";
 
  // Importa la configuración
 
@@ -306,6 +307,202 @@ export const changeEstadoMinijuego = async (id, estadoId) => {
     return response.data;
   } catch (error) {
     console.error("Error al cambiar el estado del minijuego:", error);
+    throw error;
+  }
+};
+
+export const exportarResultados = async (tipoArchivo, usuarioId = null, minijuegoId = null) => {
+  try {
+      const params = new URLSearchParams();
+      params.append("tipoArchivo", tipoArchivo);
+      if (usuarioId) params.append("usuarioId", usuarioId);
+      if (minijuegoId) params.append("minijuegoId", minijuegoId);
+
+      const response = await axios.get(`${apiUrl}/api/resultados/exportar?${params.toString()}`, {
+          responseType: "blob", // Importante para descargar archivos
+      });
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `Resultados.${tipoArchivo === "excel" ? "xlsx" : "pdf"}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+  } catch (error) {
+      console.error("Error al exportar resultados:", error);
+      throw error;
+  }
+};
+
+export const getStudentRanking = async () => {
+  try {
+    const response = await axios.get(`${apiUrl}/api/Usuario/ranking`);
+    return response.data.ranking?.$values || []; // Retorna el array directamente
+  } catch (error) {
+    console.error("Error obteniendo el ranking:", error);
+    return [];
+  }
+};
+
+export const updateUserCredentials = async (id, credentials) => {
+  try {
+    // Encriptar la contraseña si se proporciona
+    if (credentials.contrasena) {
+      credentials.contrasena = sha256(credentials.contrasena).toString();
+    }
+
+    const response = await axios.put(
+      `${apiUrl}/api/Usuario/update-credentials/${id}`,
+      credentials
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error al actualizar credenciales:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error en la actualización",
+    };
+  }
+};
+
+export const importarEstudiantes = async (file) => {
+  const actualUser = JSON.parse(localStorage.getItem("user"));
+  const token = actualUser.token;
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await axios.post(
+      `${apiUrl}/api/Usuario/import-students`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    
+    // Verifica si la respuesta es exitosa y devuelve solo un mensaje simple
+    if (response.data) {
+      return {
+        success: true,
+        message: "Estudiantes Registrados con éxito"
+      };
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error("Error al importar estudiantes:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Error al importar estudiantes",
+    };
+  }
+};
+
+// Funciones para manejar diálogos (antes "apoyos")
+export const getDialogos = async () => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Tematico/GetApoyos`);
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    const data = await response.json();
+    // Extraer el array de valores del objeto JSON
+    return data.$values || [];
+  } catch (error) {
+    console.error('Error al obtener diálogos:', error);
+    throw error;
+  }
+};
+
+export const createDialogo = async (dialogoData) => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Tematico/CreateApoyo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Titulo: dialogoData.titulo,
+        Descripcion: dialogoData.descripcion,
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error al crear diálogo:', error);
+    throw error;
+  }
+};
+
+export const updateDialogo = async (id, dialogoData) => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Tematico/UpdateApoyo/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Titulo: dialogoData.titulo,
+        Descripcion: dialogoData.descripcion,
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error al actualizar diálogo:', error);
+    throw error;
+  }
+};
+
+export const deleteDialogo = async (id) => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Tematico/DeleteApoyo/${id}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error al eliminar diálogo:', error);
+    throw error;
+  }
+};
+
+// Funciones para manejar temáticos
+export const createTematico = async (tematicoData) => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Tematico/CreateTematico`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        TituloTematico: tematicoData.tituloTematico,
+        Descripcion: tematicoData.descripcion,
+        IdApoyo: tematicoData.idDialogo, // Renombrado para mantener consistencia
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error al crear temático:', error);
     throw error;
   }
 };

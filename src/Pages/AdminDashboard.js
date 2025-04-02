@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { deleteUser, registerTeacher, registerAdmin, getTeachers, updateTeacher, updateAdmin, getAdmins, sendEmailReport } from '../Services/apiService';
 import CryptoJS from 'crypto-js';
-import './Dashboard.css';
+import './AdminDashboard.css';
 
 const AdminDashboard = () => {
     const [teachers, setTeachers] = useState([]);
@@ -16,7 +16,7 @@ const AdminDashboard = () => {
         usuarioId: '',
         nombreUsuario: '',
         nombreCompleto: '',
-        correoElectronico: '', // Nuevo campo
+        correoElectronico: '',
         contrasena: ''
     });
 
@@ -24,7 +24,7 @@ const AdminDashboard = () => {
         usuarioId: '',
         nombreUsuario: '',
         nombreCompleto: '',
-        correoElectronico: '', // Nuevo campo
+        correoElectronico: '',
         contrasena: ''
     });
 
@@ -34,70 +34,175 @@ const AdminDashboard = () => {
     }, []);
 
     const fetchTeachers = async () => {
-        const result = await getTeachers();
-        setTeachers(result);
+        try {
+            const result = await getTeachers();
+            // Extraer los datos del array $values
+            if (result && result.$values) {
+                setTeachers(result.$values);
+            } else if (result && result.$id && result.$values) {
+                // Manejar estructura anidada
+                setTeachers(result.$values);
+            } else {
+                console.error('Formato de respuesta inesperado:', result);
+                setTeachers([]);
+            }
+        } catch (error) {
+            console.error('Error al obtener docentes:', error);
+            setTeachers([]);
+        }
     };
 
     const fetchAdmins = async () => {
-        const result = await getAdmins();
-        setAdmins(result);
+        try {
+            const result = await getAdmins();
+            // Extraer los datos del array $values
+            if (result && result.$values) {
+                setAdmins(result.$values);
+            } else if (result && result.$id && result.$values) {
+                // Manejar estructura anidada
+                setAdmins(result.$values);
+            } else {
+                console.error('Formato de respuesta inesperado:', result);
+                setAdmins([]);
+            }
+        } catch (error) {
+            console.error('Error al obtener administradores:', error);
+            setAdmins([]);
+        }
     };
 
     const handleDelete = async (id) => {
-        const result = await deleteUser(id);
-        setMessage(result.message || 'Error al eliminar el usuario');
-        fetchTeachers();
-        fetchAdmins();
+        try {
+            const result = await deleteUser(id);
+            setMessage(result.message || 'Usuario eliminado correctamente');
+            fetchTeachers();
+            fetchAdmins();
+        } catch (error) {
+            setMessage('Error al eliminar el usuario');
+            console.error('Error al eliminar usuario:', error);
+        }
     };
 
     const handleEditTeacher = (teacher) => {
         setSelectedTeacher(teacher);
-        setTeacherData(teacher);
+        setTeacherData({
+            usuarioId: teacher.usuarioId,
+            nombreUsuario: teacher.nombreUsuario,
+            nombreCompleto: teacher.nombreCompleto,
+            correoElectronico: teacher.correoElectronico,
+            contrasena: ''
+        });
     };
 
     const handleEditAdmin = (admin) => {
         setSelectedAdmin(admin);
-        setAdminData(admin);
+        setAdminData({
+            usuarioId: admin.usuarioId,
+            nombreUsuario: admin.nombreUsuario,
+            nombreCompleto: admin.nombreCompleto,
+            correoElectronico: admin.correoElectronico,
+            contrasena: ''
+        });
     };
 
     const handleUpdateTeacher = async (e) => {
         e.preventDefault();
-        const hashedPassword = CryptoJS.SHA256(teacherData.contrasena).toString();
-        const updatedData = { ...teacherData, contrasena: hashedPassword };
-        const result = await updateTeacher(selectedTeacher.usuarioId, updatedData);
-        setMessage(result.message || 'Error al actualizar el docente');
-        setSelectedTeacher(null);
-        setTeacherData({ usuarioId: '', nombreUsuario: '', nombreCompleto: '', correoElectronico: '', contrasena: '' });
-        fetchTeachers();
+        try {
+            const hashedPassword = teacherData.contrasena 
+                ? CryptoJS.SHA256(teacherData.contrasena).toString() 
+                : undefined;
+            
+            const updatedData = { 
+                ...teacherData, 
+                contrasena: hashedPassword,
+                rolId: 2 // Asegurar que se mantiene el rol de profesor
+            };
+            
+            // Si la contraseña está vacía, no la enviar en la actualización
+            if (!teacherData.contrasena) {
+                delete updatedData.contrasena;
+            }
+            
+            const result = await updateTeacher(selectedTeacher.usuarioId, updatedData);
+            setMessage(result.message || 'Docente actualizado correctamente');
+            setSelectedTeacher(null);
+            setTeacherData({ usuarioId: '', nombreUsuario: '', nombreCompleto: '', correoElectronico: '', contrasena: '' });
+            fetchTeachers();
+        } catch (error) {
+            setMessage('Error al actualizar el docente');
+            console.error('Error al actualizar docente:', error);
+        }
     };
 
     const handleUpdateAdmin = async (e) => {
         e.preventDefault();
-        const hashedPassword = CryptoJS.SHA256(adminData.contrasena).toString();
-        const updatedData = { ...adminData, contrasena: hashedPassword };
-        const result = await updateAdmin(selectedAdmin.usuarioId, updatedData);
-        setMessage(result.message || 'Error al actualizar el administrador');
-        setSelectedAdmin(null);
-        setAdminData({ usuarioId: '', nombreUsuario: '', nombreCompleto: '', correoElectronico: '', contrasena: '' });
-        fetchAdmins();
+        try {
+            const hashedPassword = adminData.contrasena 
+                ? CryptoJS.SHA256(adminData.contrasena).toString() 
+                : undefined;
+            
+            const updatedData = { 
+                ...adminData, 
+                contrasena: hashedPassword,
+                rolId: 1 // Asegurar que se mantiene el rol de administrador
+            };
+            
+            // Si la contraseña está vacía, no la enviar en la actualización
+            if (!adminData.contrasena) {
+                delete updatedData.contrasena;
+            }
+            
+            const result = await updateAdmin(selectedAdmin.usuarioId, updatedData);
+            setMessage(result.message || 'Administrador actualizado correctamente');
+            setSelectedAdmin(null);
+            setAdminData({ usuarioId: '', nombreUsuario: '', nombreCompleto: '', correoElectronico: '', contrasena: '' });
+            fetchAdmins();
+        } catch (error) {
+            setMessage('Error al actualizar el administrador');
+            console.error('Error al actualizar administrador:', error);
+        }
     };
 
     const handleRegisterTeacher = async (e) => {
         e.preventDefault();
-        const hashedPassword = CryptoJS.SHA256(teacherData.contrasena).toString();
-        const result = await registerTeacher({ ...teacherData, contrasena: hashedPassword });
-        setMessage(result.message || 'Error al registrar el docente');
-        setTeacherData({ usuarioId: '', nombreUsuario: '', nombreCompleto: '', correoElectronico: '', contrasena: '' });
-        fetchTeachers();
+        try {
+            const hashedPassword = CryptoJS.SHA256(teacherData.contrasena).toString();
+            const newTeacher = { 
+                ...teacherData, 
+                contrasena: hashedPassword,
+                rolId: 2, // Rol de profesor
+                curso: "N/A" // Campo requerido según el modelo
+            };
+            
+            const result = await registerTeacher(newTeacher);
+            setMessage(result.message || 'Docente registrado correctamente');
+            setTeacherData({ usuarioId: '', nombreUsuario: '', nombreCompleto: '', correoElectronico: '', contrasena: '' });
+            fetchTeachers();
+        } catch (error) {
+            setMessage('Error al registrar el docente');
+            console.error('Error al registrar docente:', error);
+        }
     };
 
     const handleRegisterAdmin = async (e) => {
         e.preventDefault();
-        const hashedPassword = CryptoJS.SHA256(adminData.contrasena).toString();
-        const result = await registerAdmin({ ...adminData, contrasena: hashedPassword });
-        setMessage(result.message || 'Error al registrar el administrador');
-        setAdminData({ usuarioId: '', nombreUsuario: '', nombreCompleto: '', correoElectronico: '', contrasena: '' });
-        fetchAdmins();
+        try {
+            const hashedPassword = CryptoJS.SHA256(adminData.contrasena).toString();
+            const newAdmin = { 
+                ...adminData, 
+                contrasena: hashedPassword,
+                rolId: 1, // Rol de administrador
+                curso: "N/A" // Campo requerido según el modelo
+            };
+            
+            const result = await registerAdmin(newAdmin);
+            setMessage(result.message || 'Administrador registrado correctamente');
+            setAdminData({ usuarioId: '', nombreUsuario: '', nombreCompleto: '', correoElectronico: '', contrasena: '' });
+            fetchAdmins();
+        } catch (error) {
+            setMessage('Error al registrar el administrador');
+            console.error('Error al registrar administrador:', error);
+        }
     };
 
     const handleSendReport = async () => {
@@ -112,6 +217,7 @@ const AdminDashboard = () => {
             setShowEmailInput(false);
         } catch (error) {
             setMessage('Error al enviar el informe.');
+            console.error('Error al enviar informe:', error);
         }
     };
 
@@ -160,8 +266,8 @@ const AdminDashboard = () => {
                     id="teacher-password-input"
                     value={teacherData.contrasena}
                     onChange={(e) => setTeacherData({ ...teacherData, contrasena: e.target.value })}
-                    placeholder="Contraseña"
-                    required
+                    placeholder={selectedTeacher ? "Dejar en blanco para mantener actual" : "Contraseña"}
+                    required={!selectedTeacher}
                 />
                 <button id="teacher-submit-button" type="submit">{selectedTeacher ? 'Actualizar Docente' : 'Registrar Docente'}</button>
                 {selectedTeacher && <button id="teacher-cancel-button" onClick={() => setSelectedTeacher(null)}>Cancelar</button>}
@@ -179,18 +285,24 @@ const AdminDashboard = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {teachers.map(teacher => (
-                        <tr key={teacher.usuarioId}>
-                            <td>{teacher.usuarioId}</td>
-                            <td>{teacher.nombreUsuario}</td>
-                            <td>{teacher.nombreCompleto}</td>
-                            <td>{teacher.correoElectronico}</td>
-                            <td>
-                                <button id={`edit-teacher-${teacher.usuarioId}`} onClick={() => handleEditTeacher(teacher)}>Editar</button>
-                                <button id={`delete-teacher-${teacher.usuarioId}`} onClick={() => handleDelete(teacher.usuarioId)}>Eliminar</button>
-                            </td>
+                    {teachers && teachers.length > 0 ? (
+                        teachers.map(teacher => (
+                            <tr key={teacher.$id || teacher.usuarioId}>
+                                <td>{teacher.usuarioId}</td>
+                                <td>{teacher.nombreUsuario}</td>
+                                <td>{teacher.nombreCompleto}</td>
+                                <td>{teacher.correoElectronico}</td>
+                                <td>
+                                    <button id={`edit-teacher-${teacher.usuarioId}`} onClick={() => handleEditTeacher(teacher)}>Editar</button>
+                                    <button id={`delete-teacher-${teacher.usuarioId}`} onClick={() => handleDelete(teacher.usuarioId)}>Eliminar</button>
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="5">No hay docentes registrados</td>
                         </tr>
-                    ))}
+                    )}
                 </tbody>
             </table>
 
@@ -235,8 +347,8 @@ const AdminDashboard = () => {
                     id="admin-password-input"
                     value={adminData.contrasena}
                     onChange={(e) => setAdminData({ ...adminData, contrasena: e.target.value })}
-                    placeholder="Contraseña"
-                    required
+                    placeholder={selectedAdmin ? "Dejar en blanco para mantener actual" : "Contraseña"}
+                    required={!selectedAdmin}
                 />
                 <button id="admin-submit-button" type="submit">{selectedAdmin ? 'Actualizar Administrador' : 'Registrar Administrador'}</button>
                 {selectedAdmin && <button id="admin-cancel-button" onClick={() => setSelectedAdmin(null)}>Cancelar</button>}
@@ -254,36 +366,43 @@ const AdminDashboard = () => {
                     </tr>
                 </thead>
                 <tbody>
-                    {admins.map(admin => (
-                        <tr key={admin.usuarioId}>
-                            <td>{admin.usuarioId}</td>
-                            <td>{admin.nombreUsuario}</td>
-                            <td>{admin.nombreCompleto}</td>
-                            <td>{admin.correoElectronico}</td>
-                            <td>
-                                <button id={`edit-admin-${admin.usuarioId}`} onClick={() => handleEditAdmin(admin)}>Editar</button>
-                                <button id={`delete-admin-${admin.usuarioId}`} onClick={() => handleDelete(admin.usuarioId)}>Eliminar</button>
-                            </td>
+                    {admins && admins.length > 0 ? (
+                        admins.map(admin => (
+                            <tr key={admin.$id || admin.usuarioId}>
+                                <td>{admin.usuarioId}</td>
+                                <td>{admin.nombreUsuario}</td>
+                                <td>{admin.nombreCompleto}</td>
+                                <td>{admin.correoElectronico}</td>
+                                <td>
+                                    <button id={`edit-admin-${admin.usuarioId}`} onClick={() => handleEditAdmin(admin)}>Editar</button>
+                                    <button id={`delete-admin-${admin.usuarioId}`} onClick={() => handleDelete(admin.usuarioId)}>Eliminar</button>
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="5">No hay administradores registrados</td>
                         </tr>
-                    ))}
+                    )}
                 </tbody>
             </table>
             
- {/* Botón para mostrar el input de correo electrónico */}
             <button id="send-report-button" onClick={() => setShowEmailInput(!showEmailInput)}>
                 Enviar informe de usuarios
             </button>
 
             {showEmailInput && (
-                <div>
+                <div id="email-report-container">
                     <input
                         type="email"
+                        id="recipient-email-input"
                         value={recipientEmail}
                         onChange={(e) => setRecipientEmail(e.target.value)}
                         placeholder="Correo destinatario"
+                        required
                     />
-                    <button onClick={handleSendReport}>Enviar Informe</button>
-                    <button onClick={() => setShowEmailInput(false)}>Cancelar</button>
+                    <button id="send-email-button" onClick={handleSendReport}>Enviar Informe</button>
+                    <button id="cancel-email-button" onClick={() => setShowEmailInput(false)}>Cancelar</button>
                 </div>
             )}
         </div>

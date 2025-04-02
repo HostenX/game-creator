@@ -1,0 +1,44 @@
+.ranking-container {
+    text-align: center;
+    background-color: #3b2468; /* Morado oscuro de fondo */
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    color: white;
+  }
+  
+  .ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  .ranking-table th, .ranking-table td {
+    padding: 12px;
+    border: 1px solid #ddd;
+    text-align: center;
+  }
+  
+  .ranking-table th {
+    background-color: #5e3a99; /* Morado más claro para encabezados */
+  }
+  
+  .gold {
+    background: linear-gradient(90deg, #ffd700, #b8860b); /* Oro */
+    color: black;
+  }
+  
+  .silver {
+    background: linear-gradient(90deg, #c0c0c0, #808080); /* Plata */
+    color: black;
+  }
+  
+  .bronze {
+    background: linear-gradient(90deg, #cd7f32, #8b5a2b); /* Bronce */
+    color: black;
+  }
+  
+  .default {
+    background-color: #4e2a84; /* Morado más oscuro */
+  }
+  
