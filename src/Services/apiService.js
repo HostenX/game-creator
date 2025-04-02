@@ -403,3 +403,106 @@ export const importarEstudiantes = async (file) => {
     };
   }
 };
+
+// Funciones para manejar diálogos (antes "apoyos")
+export const getDialogos = async () => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Tematico/GetApoyos`);
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    const data = await response.json();
+    // Extraer el array de valores del objeto JSON
+    return data.$values || [];
+  } catch (error) {
+    console.error('Error al obtener diálogos:', error);
+    throw error;
+  }
+};
+
+export const createDialogo = async (dialogoData) => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Tematico/CreateApoyo`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Titulo: dialogoData.titulo,
+        Descripcion: dialogoData.descripcion,
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error al crear diálogo:', error);
+    throw error;
+  }
+};
+
+export const updateDialogo = async (id, dialogoData) => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Tematico/UpdateApoyo/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Titulo: dialogoData.titulo,
+        Descripcion: dialogoData.descripcion,
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error al actualizar diálogo:', error);
+    throw error;
+  }
+};
+
+export const deleteDialogo = async (id) => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Tematico/DeleteApoyo/${id}`, {
+      method: 'DELETE',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error al eliminar diálogo:', error);
+    throw error;
+  }
+};
+
+// Funciones para manejar temáticos
+export const createTematico = async (tematicoData) => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Tematico/CreateTematico`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        TituloTematico: tematicoData.tituloTematico,
+        Descripcion: tematicoData.descripcion,
+        IdApoyo: tematicoData.idDialogo, // Renombrado para mantener consistencia
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error al crear temático:', error);
+    throw error;
+  }
+};

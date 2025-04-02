@@ -53,7 +53,9 @@ const MinijuegosTable = () => {
   };
 
   const handleEdit = (minijuego) => {
-    setCurrentMinijuego(minijuego);
+    // Asegurarse de que estamos pasando el objeto completo al modal
+    console.log("Enviando datos al modal:", minijuego);
+    setCurrentMinijuego({...minijuego});
     setIsEditing(true);
   };
 
@@ -66,9 +68,15 @@ const MinijuegosTable = () => {
         )
       );
       setIsEditing(false);
+      // Actualizar la lista después de guardar los cambios
+      if (usuarioId) {
+        fetchMinijuegos(usuarioId);
+      }
+      return { success: true };
     } catch (error) {
       console.error("Error al guardar cambios:", error);
       setError("No se pudo guardar los cambios.");
+      return { success: false, message: "Error al actualizar el minijuego" };
     }
   };
 
@@ -87,6 +95,12 @@ const MinijuegosTable = () => {
       }
     }
   };
+  
+  // Función para cerrar el modal y limpiar el minijuego actual
+  const handleCloseModal = () => {
+    setIsEditing(false);
+    setCurrentMinijuego(null);
+  };
 
   return (
     <div className="minijuegos-table">
@@ -104,6 +118,7 @@ const MinijuegosTable = () => {
           <caption>Lista de Minijuegos</caption>
           <thead>
             <tr>
+              <th scope="col">ID</th>
               <th scope="col">Título</th>
               <th scope="col">Descripción</th>
               <th scope="col">Estado</th>
@@ -113,6 +128,7 @@ const MinijuegosTable = () => {
           <tbody>
             {minijuegos.map((minijuego) => (
               <tr key={minijuego.minijuegoId || `key-${minijuego.titulo}`}>
+                <td>{minijuego.minijuegoId}</td>
                 <td>{minijuego.titulo}</td>
                 <td>{minijuego.descripcion}</td>
                 <td>{ESTADO_LABELS[minijuego.estadoId] || "Desconocido"}</td>
@@ -135,12 +151,14 @@ const MinijuegosTable = () => {
           </tbody>
         </table>
       )}
-      <EditMinijuegoModal
-        isOpen={isEditing}
-        onClose={() => setIsEditing(false)}
-        minijuego={currentMinijuego}
-        onSave={handleSaveEdit}
-      />
+      {isEditing && currentMinijuego && (
+        <EditMinijuegoModal
+          isOpen={isEditing}
+          onClose={handleCloseModal}
+          minijuego={currentMinijuego}
+          onSave={handleSaveEdit}
+        />
+      )}
     </div>
   );
 };

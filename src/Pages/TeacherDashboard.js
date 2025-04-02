@@ -2,11 +2,15 @@ import React, { useState } from "react";
 import MinijuegosTable from "./MinijuegosTable";
 import MinijuegoForm from "./MinijuegoForm";
 import TematicoForm from "./TematicoForm";
-import { exportarResultados, importarEstudiantes } from "../Services/apiService";
+import DialogosManager from "./DialogosManager";
+import {
+  exportarResultados,
+  importarEstudiantes,
+} from "../Services/apiService";
 
 const TeacherDashboard = () => {
   const [reload, setReload] = useState(false);
-  const [view, setView] = useState("minijuegos"); // "minijuegos" o "tematicos"
+  const [view, setView] = useState("minijuegos"); // "minijuegos", "tematicos" o "dialogos"
   const [showModal, setShowModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [usuarioId, setUsuarioId] = useState("");
@@ -41,22 +45,53 @@ const TeacherDashboard = () => {
   };
 
   return (
-    <div>
+    <div className="dashboard-container">
       <h1>Dashboard del Profesor</h1>
-      <div>
-        <button onClick={() => setView("minijuegos")}>Ver Minijuegos</button>
-        <button onClick={() => setView("tematicos")}>Crear Temáticos</button>
-        <button onClick={() => setShowModal(true)}>Exportar a Documento</button>
-        <button onClick={() => setShowImportModal(true)}>Importar Estudiantes</button>
+      
+      <nav className="dashboard-nav">
+        <button 
+          className={view === "minijuegos" ? "active" : ""} 
+          onClick={() => setView("minijuegos")}
+        >
+          Ver Minijuegos
+        </button>
+        <button 
+          className={view === "dialogos" ? "active" : ""} 
+          onClick={() => setView("dialogos")}
+        >
+          Consejos de NPC
+        </button>
+        <button 
+          className={view === "tematicos" ? "active" : ""} 
+          onClick={() => setView("tematicos")}
+        >
+          Crear Temáticos
+        </button>
+        <button onClick={() => setShowModal(true)}>
+          Exportar a Documento
+        </button>
+        <button onClick={() => setShowImportModal(true)}>
+          Importar Estudiantes
+        </button>
+      </nav>
+      
+      <div className="dashboard-content">
+        {view === "minijuegos" && (
+          <>
+            <MinijuegoForm onSave={handleSave} />
+            <MinijuegosTable key={reload} />
+          </>
+        )}
+        
+        {view === "dialogos" && (
+          <DialogosManager onSave={handleSave} />
+        )}
+        
+        {view === "tematicos" && (
+          <TematicoForm onSave={handleSave} />
+        )}
       </div>
-      {view === "minijuegos" ? (
-        <>
-          <MinijuegoForm onSave={handleSave} />
-          <MinijuegosTable key={reload} />
-        </>
-      ) : (
-        <TematicoForm onSave={handleSave} />
-      )}
+      
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content">
@@ -81,6 +116,7 @@ const TeacherDashboard = () => {
           </div>
         </div>
       )}
+      
       {showImportModal && (
         <div className="modal-overlay">
           <div className="modal-content">

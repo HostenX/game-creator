@@ -4,6 +4,7 @@ import { AuthContext } from "../../Contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import CryptoJS from "crypto-js"; // Asegúrate de que esta librería esté instalada
 import './LoginForm.css';
+import Header from "../Header/Header";
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
@@ -58,36 +59,38 @@ const LoginForm = () => {
   
 
   return (
-    <div id="login-container">
-  <h2 id="login-title">Iniciar Sesión</h2>
-  <form id="login-form" onSubmit={handleSubmit}>
-    <input
-      id="login-username"
-      type="text"
-      name="nombreUsuario"
-      placeholder="Nombre de Usuario"
-      value={formData.nombreUsuario}
-      onChange={handleInputChange}
-    />
-    <input
-      id="login-password"
-      type="password"
-      name="contrasena"
-      placeholder="Contraseña"
-      value={formData.contrasena}
-      onChange={handleInputChange}
-    />
-    <button id="login-button" type="submit">Iniciar Sesión</button>
-  </form>
+    <>
+      <Header id="header" />
+      <div id="login-container">
+        <h2 id="login-title">Iniciar Sesión</h2>
+        <form id="login-form" onSubmit={handleSubmit}>
+          <input
+            id="login-username"
+            type="text"
+            name="nombreUsuario"
+            placeholder="Nombre de Usuario"
+            value={formData.nombreUsuario}
+            onChange={handleInputChange}
+          />
+          <input
+            id="login-password"
+            type="password"
+            name="contrasena"
+            placeholder="Contraseña"
+            value={formData.contrasena}
+            onChange={handleInputChange}
+          />
+          <button id="login-button" type="submit">Iniciar Sesión</button>
+        </form>
 
-  {message && (
-    <p id="login-message" style={{ color: isSuccess ? "green" : "red" }}>{message}</p>
-  )}
-  <p id="register-link">
-        ¿No tienes una cuenta? <a href="/register">Regístrate aquí</a>
-      </p>
-</div>
-
+        {message && (
+          <p id="login-message" style={{ color: isSuccess ? "green" : "red" }}>{message}</p>
+        )}
+        <p id="register-link">
+          ¿No tienes una cuenta? <a href="/register">Regístrate aquí</a>
+        </p>
+      </div>
+    </>
   );
 };
 

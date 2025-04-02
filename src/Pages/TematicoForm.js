@@ -1,80 +1,121 @@
-import React, { useState } from "react";
-import { createTematicoWithApoyo } from "../Services/apiService";
+import React, { useState, useEffect } from 'react';
+import { getDialogos, createTematico } from '../Services/apiService';
 
 const TematicoForm = ({ onSave }) => {
   const [formData, setFormData] = useState({
-    ApoyoNombre: "",
-    ApoyoDescripcion: "",
-    TituloTematico: "",
-    Descripcion: "",
+    tituloTematico: '',
+    descripcion: '',
+    idDialogo: ''
   });
-  const [error, setError] = useState("");
+  const [dialogos, setDialogos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
-  const handleChange = (e) => {
+  useEffect(() => {
+    loadDialogos();
+  }, []);
+
+  const loadDialogos = async () => {
+    try {
+      setLoading(true);
+      const data = await getDialogos();
+      setDialogos(data);
+      setError(null);
+    } catch (err) {
+      setError('Error al cargar los consejos de NPC. Por favor intenta de nuevo.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const response = await createTematicoWithApoyo(formData);
-    if (response.success === false) {
-      setError(response.message || "Error al guardar Temático con Apoyo.");
-    } else {
+    
+    if (!formData.idDialogo) {
+      setError('Por favor selecciona un consejo de NPC');
+      return;
+    }
+
+    try {
+      await createTematico(formData);
       setFormData({
-        ApoyoNombre: "",
-        ApoyoDescripcion: "",
-        TituloTematico: "",
-        Descripcion: "",
+        tituloTematico: '',
+        descripcion: '',
+        idDialogo: ''
       });
-      onSave();
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      if (onSave) onSave();
+    } catch (err) {
+      setError('Error al crear el temático. Por favor intenta de nuevo.');
+      console.error(err);
     }
   };
 
   return (
-    <div>
-      <h2>Crear Temático y Apoyo</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+    <div className="tematico-form-container">
+      <h2>Crear Nuevo Temático</h2>
+      
+      {error && <div className="error-message">{error}</div>}
+      {success && <div className="success-message">Temático creado correctamente</div>}
+      
       <form onSubmit={handleSubmit}>
-        <div>
-          <label>Nombre del Apoyo:</label>
+        <div className="form-group">
+          <label htmlFor="tituloTematico">Título del Temático:</label>
           <input
             type="text"
-            name="ApoyoNombre"
-            value={formData.ApoyoNombre}
-            onChange={handleChange}
+            id="tituloTematico"
+            name="tituloTematico"
+            value={formData.tituloTematico}
+            onChange={handleInputChange}
             required
           />
         </div>
-        <div>
-          <label>Descripción del Apoyo:</label>
+        
+        <div className="form-group">
+          <label htmlFor="descripcion">Descripción:</label>
           <textarea
-            name="ApoyoDescripcion"
-            value={formData.ApoyoDescripcion}
-            onChange={handleChange}
+            id="descripcion"
+            name="descripcion"
+            value={formData.descripcion}
+            onChange={handleInputChange}
             required
+            rows="4"
           />
         </div>
-        <div>
-          <label>Título del Temático:</label>
-          <input
-            type="text"
-            name="TituloTematico"
-            value={formData.TituloTematico}
-            onChange={handleChange}
-            required
-          />
+        
+        <div className="form-group">
+          <label htmlFor="idDialogo">Consejo de NPC:</label>
+          {loading ? (
+            <p>Cargando consejos...</p>
+          ) : (
+            <select
+              id="idDialogo"
+              name="idDialogo"
+              value={formData.idDialogo}
+              onChange={handleInputChange}
+              required
+            >
+              <option value="">Selecciona un consejo</option>
+              {dialogos.map((dialogo) => (
+                <option key={dialogo.idApoyo} value={dialogo.idApoyo}>
+                  {dialogo.titulo}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
-        <div>
-          <label>Descripción del Temático:</label>
-          <textarea
-            name="Descripcion"
-            value={formData.Descripcion}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <button type="submit">Guardar</button>
+        
+        <button type="submit" className="btn-primary">
+          Crear Temático
+        </button>
       </form>
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { registerStudent } from "../../Services/apiService";
 import CryptoJS from 'crypto-js'; // Asegúrate de instalar crypto-js con `npm install crypto-js`
 import "./StudentRegistrationForm.css";
+import Header from "../Header/Header";
 
 const RegisterStudentForm = () => {
   const [formData, setFormData] = useState({
@@ -64,67 +65,70 @@ const RegisterStudentForm = () => {
   };
 
   return (
-    <div id="register-student-form-container">
-      <h2 id="form-title">Registro de Estudiante</h2>
-      <form id="register-student-form" onSubmit={handleSubmit}>
-        <input
-          type="number"
-          id="input-usuario-id"
-          name="UsuarioId"
-          placeholder="Identificación (CC / TI)"
-          value={formData.UsuarioId}
-          onChange={handleInputChange}
-        />
-        <input
-          type="text"
-          id="input-nombre-usuario"
-          name="nombreUsuario"
-          placeholder="Nombre de Usuario"
-          value={formData.nombreUsuario}
-          onChange={handleInputChange}
-        />
-        <input
-          type="text"
-          id="input-nombre-completo"
-          name="nombreCompleto"
-          placeholder="Nombre Completo"
-          value={formData.nombreCompleto}
-          onChange={handleInputChange}
-        />
-        <input
-          type="password"
-          id="input-contrasena"
-          name="contrasena"
-          placeholder="Contraseña"
-          value={formData.contrasena}
-          onChange={handleInputChange}
-        />
-        <input
-          type="text"
-          id="input-curso"
-          name="curso"
-          placeholder="Curso"
-          value={formData.curso}
-          onChange={handleInputChange}
-        />
-        <input
-          type="email"
-          id="input-correo-electronico"
-          name="correoElectronico"
-          placeholder="Correo Electrónico"
-          value={formData.correoElectronico}
-          onChange={handleInputChange}
-        />
-        <button id="submit-button" type="submit">Registrar</button>
-      </form>
+    <>
+      <Header id="header" />
+      <div id="register-student-form-container">
+        <h2 id="form-title">Registro de Estudiante</h2>
+        <form id="register-student-form" onSubmit={handleSubmit}>
+          <input
+            type="number"
+            id="input-usuario-id"
+            name="UsuarioId"
+            placeholder="Identificación (CC / TI)"
+            value={formData.UsuarioId}
+            onChange={handleInputChange}
+          />
+          <input
+            type="text"
+            id="input-nombre-usuario"
+            name="nombreUsuario"
+            placeholder="Nombre de Usuario"
+            value={formData.nombreUsuario}
+            onChange={handleInputChange}
+          />
+          <input
+            type="text"
+            id="input-nombre-completo"
+            name="nombreCompleto"
+            placeholder="Nombre Completo"
+            value={formData.nombreCompleto}
+            onChange={handleInputChange}
+          />
+          <input
+            type="password"
+            id="input-contrasena"
+            name="contrasena"
+            placeholder="Contraseña"
+            value={formData.contrasena}
+            onChange={handleInputChange}
+          />
+          <input
+            type="text"
+            id="input-curso"
+            name="curso"
+            placeholder="Curso"
+            value={formData.curso}
+            onChange={handleInputChange}
+          />
+          <input
+            type="email"
+            id="input-correo-electronico"
+            name="correoElectronico"
+            placeholder="Correo Electrónico"
+            value={formData.correoElectronico}
+            onChange={handleInputChange}
+          />
+          <button id="submit-button" type="submit">Registrar</button>
+        </form>
 
-      {message && (
-        <p id="form-message" style={{ color: isSuccess ? "green" : "red" }}>{message}</p>
-      )}
-      <p id="login-link">
-        ¿Ya tienes una cuenta? <a href="/login">Inicia sesión aquí</a>
-      </p>
-    </div>
+        {message && (
+          <p id="form-message" style={{ color: isSuccess ? "green" : "red" }}>{message}</p>
+        )}
+        <p id="login-link">
+          ¿Ya tienes una cuenta? <a href="/login">Inicia sesión aquí</a>
+        </p>
+      </div>
+    </>
   );
 };
 
