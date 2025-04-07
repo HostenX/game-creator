@@ -506,3 +506,36 @@ export const createTematico = async (tematicoData) => {
     throw error;
   }
 };
+
+export const obtenerResultados = async (usuarioId = null, minijuegoId = null, curso = null) => {
+  try {
+    let url = `${apiUrl}/api/Resultados/filtrar?`;
+    
+    // Agregar los parámetros en el orden correcto según el endpoint
+    if (usuarioId) url += `usuarioId=${encodeURIComponent(usuarioId)}&`;
+    if (curso) url += `curso=${encodeURIComponent(curso)}&`;
+    if (minijuegoId) url += `minijuegoId=${encodeURIComponent(minijuegoId)}&`;
+    
+    // Eliminar el último '&' si existe
+    url = url.endsWith('&') ? url.slice(0, -1) : url;
+    
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log("Datos recibidos de la API:", JSON.stringify(data, null, 2));
+    return data;
+  } catch (error) {
+    console.error("Error al obtener resultados:", error);
+    throw error;
+  }
+};

@@ -3,32 +3,20 @@ import MinijuegosTable from "./MinijuegosTable";
 import MinijuegoForm from "./MinijuegoForm";
 import TematicoForm from "./TematicoForm";
 import DialogosManager from "./DialogosManager";
+import ResultadosTable from "./ResultadosTable";
 import {
-  exportarResultados,
   importarEstudiantes,
 } from "../Services/apiService";
 
 const TeacherDashboard = () => {
   const [reload, setReload] = useState(false);
-  const [view, setView] = useState("minijuegos"); // "minijuegos", "tematicos" o "dialogos"
-  const [showModal, setShowModal] = useState(false);
+  const [view, setView] = useState("minijuegos"); // "minijuegos", "tematicos", "dialogos" o "resultados"
   const [showImportModal, setShowImportModal] = useState(false);
-  const [usuarioId, setUsuarioId] = useState("");
-  const [minijuegoId, setMinijuegoId] = useState("");
   const [file, setFile] = useState(null);
   const [importResult, setImportResult] = useState(null);
 
   const handleSave = () => {
     setReload(!reload);
-  };
-
-  const handleExport = async (type) => {
-    try {
-      await exportarResultados(type, usuarioId || null, minijuegoId || null);
-      setShowModal(false);
-    } catch (error) {
-      console.error("Error al exportar:", error);
-    }
   };
 
   const handleImport = async () => {
@@ -67,8 +55,11 @@ const TeacherDashboard = () => {
         >
           Crear Temáticos
         </button>
-        <button onClick={() => setShowModal(true)}>
-          Exportar a Documento
+        <button 
+          className={view === "resultados" ? "active" : ""}
+          onClick={() => setView("resultados")}
+        >
+          Ver Resultados
         </button>
         <button onClick={() => setShowImportModal(true)}>
           Importar Estudiantes
@@ -90,32 +81,11 @@ const TeacherDashboard = () => {
         {view === "tematicos" && (
           <TematicoForm onSave={handleSave} />
         )}
+        
+        {view === "resultados" && (
+          <ResultadosTable key={reload} />
+        )}
       </div>
-      
-      {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h2>Exportar Resultados</h2>
-            <label>ID de Usuario:</label>
-            <input
-              type="text"
-              value={usuarioId}
-              onChange={(e) => setUsuarioId(e.target.value)}
-              placeholder="Opcional"
-            />
-            <label>ID de Minijuego:</label>
-            <input
-              type="text"
-              value={minijuegoId}
-              onChange={(e) => setMinijuegoId(e.target.value)}
-              placeholder="Opcional"
-            />
-            <button onClick={() => handleExport("pdf")}>Generar PDF</button>
-            <button onClick={() => handleExport("excel")}>Generar Excel</button>
-            <button onClick={() => setShowModal(false)}>Cerrar</button>
-          </div>
-        </div>
-      )}
       
       {showImportModal && (
         <div className="modal-overlay">
