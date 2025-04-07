@@ -327,3 +327,111 @@ button.success {
     overflow-x: auto;
   }
 }
+
+.graficos-container {
+  margin: 20px 0;
+  padding: 20px;
+  border-radius: var(--border-radius);
+  background-color: var(--primary-dark);
+  box-shadow: var(--box-shadow);
+}
+
+.selector-grafico {
+  margin-bottom: 15px;
+  color: var(--text-light);
+}
+
+.selector-grafico select {
+  margin-left: 10px;
+  padding: 12px;
+  border: 1px solid var(--primary-light);
+  border-radius: var(--border-radius);
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--text-light);
+  width: auto;
+}
+
+.selector-grafico select:focus {
+  outline: none;
+  border-color: var(--accent-light);
+  box-shadow: 0 0 0 2px rgba(158, 101, 201, 0.3);
+}
+
+.selector-grafico select option {
+  background-color: var(--primary-dark);
+  color: var(--text-light);
+  padding: 10px;
+}
+
+.grafico-wrapper {
+  background-color: var(--primary);
+  padding: 15px;
+  border-radius: var(--border-radius);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.estadisticas-resumen {
+  margin-top: 25px;
+  color: var(--text-light);
+}
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--box-shadow);
+}
+
+.stats-table th, .stats-table td {
+  border-bottom: 1px solid var(--primary-light);
+  padding: 12px 15px;
+  text-align: center;
+}
+
+.stats-table th {
+  background-color: var(--accent);
+  color: var(--text-light);
+  font-weight: 600;
+}
+
+.stats-table tr {
+  background-color: var(--primary-dark);
+  transition: background-color 0.3s ease;
+}
+
+.stats-table tr:hover {
+  background-color: var(--primary);
+}
+
+.graficos-btn {
+  background-color: var(--accent);
+  color: var(--text-light);
+  border: none;
+  padding: 12px 20px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  margin-left: 10px;
+}
+
+.graficos-btn:hover {
+  background-color: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.graficos-btn:active {
+  transform: translateY(0);
+}
+
+.graficos-btn.success {
+  background-color: var(--success);
+  color: var(--text-dark);
+}
+
+.graficos-btn.danger {
+  background-color: var(--warning);
+}
