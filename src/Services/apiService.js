@@ -346,7 +346,7 @@ export const getStudentRanking = async () => {
   }
 };
 
-export const updateUserCredentials = async (id, credentials) => {
+export const updateUserCredentials = async (id, credentials, token) => {
   try {
     // Encriptar la contraseña si se proporciona
     if (credentials.contrasena) {
@@ -355,7 +355,12 @@ export const updateUserCredentials = async (id, credentials) => {
 
     const response = await axios.put(
       `${apiUrl}/api/Usuario/update-credentials/${id}`,
-      credentials
+      credentials,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}` // Incluir el token en el header
+        }
+      }
     );
 
     return response.data;
