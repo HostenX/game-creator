@@ -16,6 +16,7 @@ const UpdateCredentialsModal = ({ isOpen, onClose }) => {
 
     // Extraer el token del objeto user en localStorage
     const token = user.token;
+    console.log("Token:", token); // Verificar el token en la consola
     
     if (!token) {
       alert("Error: Token no encontrado en LocalStorage");
