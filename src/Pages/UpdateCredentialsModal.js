@@ -6,9 +6,19 @@ const UpdateCredentialsModal = ({ isOpen, onClose }) => {
   const [contrasena, setContrasena] = useState("");
 
   const handleUpdate = async () => {
-    const user = JSON.parse(localStorage.getItem("user")); // Obtener ID del usuario desde LocalStorage
+    // Obtener usuario y token desde LocalStorage
+    const user = JSON.parse(localStorage.getItem("user"));
+    
     if (!user || !user.id) {
       alert("Error: Usuario no encontrado en LocalStorage");
+      return;
+    }
+
+    // Extraer el token del objeto user en localStorage
+    const token = user.token;
+    
+    if (!token) {
+      alert("Error: Token no encontrado en LocalStorage");
       return;
     }
 
@@ -17,7 +27,8 @@ const UpdateCredentialsModal = ({ isOpen, onClose }) => {
       contrasena: contrasena.trim() || undefined,
     };
 
-    const response = await updateUserCredentials(user.id, credentials);
+    // Enviar token junto con la solicitud
+    const response = await updateUserCredentials(user.id, credentials, token);
     alert(response.message);
     if (response.success) {
       onClose();
@@ -28,25 +39,28 @@ const UpdateCredentialsModal = ({ isOpen, onClose }) => {
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div className="modal-container">
         <h2>Actualizar Credenciales</h2>
-        <label>
-          Nuevo Nombre de Usuario:
+        
+        <div className="form-group">
+          <label>Nuevo Nombre de Usuario:</label>
           <input
             type="text"
             value={nombreUsuario}
             onChange={(e) => setNombreUsuario(e.target.value)}
           />
-        </label>
-        <label>
-          Nueva Contraseña:
+        </div>
+        
+        <div className="form-group">
+          <label>Nueva Contraseña:</label>
           <input
             type="password"
             value={contrasena}
             onChange={(e) => setContrasena(e.target.value)}
           />
-        </label>
-        <div className="modal-buttons">
+        </div>
+        
+        <div className="modal-actions">
           <button onClick={handleUpdate}>Actualizar</button>
           <button onClick={onClose}>Cancelar</button>
         </div>
