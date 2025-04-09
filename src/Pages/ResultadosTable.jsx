@@ -13,7 +13,7 @@ const ResultadosTable = () => {
   const [usuarioId, setUsuarioId] = useState("");
   const [minijuegoId, setMinijuegoId] = useState("");
   const [curso, setCurso] = useState("");
-  const [tipoMinijuego, setTipoMinijuego] = useState("");
+  const [tipoMinijuego] = useState(""); // Mantenemos el estado pero ahora será seleccionado
   const [showExportModal, setShowExportModal] = useState(false);
   const [mostrarGraficos, setMostrarGraficos] = useState(false);
   const [tipoGrafico, setTipoGrafico] = useState("barras");
@@ -44,7 +44,7 @@ const ResultadosTable = () => {
           );
         }
         
-        if (tipoMinijuego && tipoMinijuego.trim() !== "") {
+        if (tipoMinijuego && tipoMinijuego.trim() !== "" && tipoMinijuego !== "null") {
           resultadosProcesados = resultadosProcesados.filter(item => 
             item.minijuego?.toLowerCase().includes(tipoMinijuego.toLowerCase())
           );
@@ -54,7 +54,7 @@ const ResultadosTable = () => {
       else if (Array.isArray(data)) {
         resultadosProcesados = data;
         
-        if (tipoMinijuego && tipoMinijuego.trim() !== "") {
+        if (tipoMinijuego && tipoMinijuego.trim() !== "" && tipoMinijuego !== "null") {
           resultadosProcesados = resultadosProcesados.filter(item => {
             return item.ResultadoOriginal?.Minijuego?.tipoMinijuego?.toLowerCase().includes(tipoMinijuego.toLowerCase()) ||
                    item.tipoMinijuego?.toLowerCase().includes(tipoMinijuego.toLowerCase()) ||
@@ -230,16 +230,6 @@ const ResultadosTable = () => {
             value={curso}
             onChange={(e) => setCurso(e.target.value)}
             placeholder="Filtrar por curso"
-          />
-        </div>
-        
-        <div className="filtro-grupo">
-          <label>Tipo de Minijuego:</label>
-          <input
-            type="text"
-            value={tipoMinijuego}
-            onChange={(e) => setTipoMinijuego(e.target.value)}
-            placeholder="Filtrar por tipo (Completar, Opuestos, etc.)"
           />
         </div>
         
