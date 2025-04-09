@@ -6,6 +6,7 @@ import DialogosManager from "./DialogosManager";
 import ResultadosTable from "./ResultadosTable";
 import {
   importarEstudiantes,
+  descargarPlantillaEstudiantes
 } from "../Services/apiService";
 
 const TeacherDashboard = () => {
@@ -14,6 +15,8 @@ const TeacherDashboard = () => {
   const [showImportModal, setShowImportModal] = useState(false);
   const [file, setFile] = useState(null);
   const [importResult, setImportResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [downloadingTemplate, setDownloadingTemplate] = useState(false);
 
   const handleSave = () => {
     setReload(!reload);
@@ -24,11 +27,28 @@ const TeacherDashboard = () => {
       alert("Por favor, selecciona un archivo Excel.");
       return;
     }
+
+    setLoading(true);
     try {
       const result = await importarEstudiantes(file);
       setImportResult(result);
     } catch (error) {
       console.error("Error al importar estudiantes:", error);
+      setImportResult({ success: false, message: "Error al importar estudiantes" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    setDownloadingTemplate(true);
+    try {
+      await descargarPlantillaEstudiantes();
+    } catch (error) {
+      console.error("Error al descargar la plantilla:", error);
+      alert("Error al descargar la plantilla");
+    } finally {
+      setDownloadingTemplate(false);
     }
   };
 
@@ -91,17 +111,55 @@ const TeacherDashboard = () => {
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>Importar Estudiantes</h2>
-            <input
-              type="file"
-              accept=".xlsx"
-              onChange={(e) => setFile(e.target.files[0])}
-            />
-            <button onClick={handleImport}>Importar</button>
-            <button onClick={() => setShowImportModal(false)}>Cerrar</button>
+            
+            <div className="template-section">
+              <p>Descarga la plantilla para importar estudiantes:</p>
+              <button 
+                onClick={handleDownloadTemplate} 
+                disabled={downloadingTemplate}
+                className="download-button"
+              >
+                {downloadingTemplate ? "Descargando..." : "Descargar Plantilla"}
+              </button>
+            </div>
+            
+            <div className="import-section">
+              <p>Selecciona el archivo Excel con los datos de los estudiantes:</p>
+              <input
+                type="file"
+                accept=".xlsx"
+                onChange={(e) => setFile(e.target.files[0])}
+              />
+              <div className="button-group">
+                <button 
+                  onClick={handleImport}
+                  disabled={loading}
+                  className="import-button"
+                >
+                  {loading ? "Importando..." : "Importar"}
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowImportModal(false);
+                    setFile(null);
+                    setImportResult(null);
+                  }} 
+                  className="close-button"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+            
             {importResult && (
-              <div>
+              <div className="import-result">
                 <h3>Resultados de la Importación</h3>
-                <pre>{JSON.stringify(importResult, null, 2)}</pre>
+                <p className={importResult.success ? "success" : "error"}>
+                  {importResult.message}
+                </p>
+                {importResult.details && (
+                  <pre>{JSON.stringify(importResult.details, null, 2)}</pre>
+                )}
               </div>
             )}
           </div>

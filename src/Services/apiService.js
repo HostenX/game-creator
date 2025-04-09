@@ -539,3 +539,38 @@ export const obtenerResultados = async (usuarioId = null, minijuegoId = null, cu
     throw error;
   }
 };
+
+
+export const descargarPlantillaEstudiantes = async () => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Usuario/download-template`, {
+      method: 'GET',
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+    
+    // Obtener el blob de la respuesta
+    const blob = await response.blob();
+    
+    // Crear una URL para el blob
+    const url = window.URL.createObjectURL(blob);
+    
+    // Crear un elemento <a> para descargar el archivo
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'PlantillaImportacionEstudiantes.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    
+    // Limpiar
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error al descargar la plantilla:', error);
+    throw error;
+  }
+};
