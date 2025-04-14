@@ -44,7 +44,8 @@ const LoginForm = () => {
           nombreUsuario: formData.nombreUsuario,
           rolId: response.rolId,
           token: response.token,  // Guardar el token JWT
-          id: response.usuarioId
+          id: response.usuarioId,
+          curso: response.curso
         });
         navigate("/dashboard"); // Redirigir al dashboard
       } else {
