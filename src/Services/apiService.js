@@ -512,7 +512,7 @@ export const createTematico = async (tematicoData) => {
   }
 };
 
-export const obtenerResultados = async (usuarioId = null, minijuegoId = null, curso = null) => {
+export const obtenerResultados = async (usuarioId = null, minijuegoId = null, curso = null, tipoMinijuego = null, creadorId = null) => {
   try {
     let url = `${apiUrl}/api/Resultados/filtrar?`;
     
@@ -520,6 +520,8 @@ export const obtenerResultados = async (usuarioId = null, minijuegoId = null, cu
     if (usuarioId) url += `usuarioId=${encodeURIComponent(usuarioId)}&`;
     if (curso) url += `curso=${encodeURIComponent(curso)}&`;
     if (minijuegoId) url += `minijuegoId=${encodeURIComponent(minijuegoId)}&`;
+    if (tipoMinijuego) url += `tipoMinijuego=${encodeURIComponent(tipoMinijuego)}&`;
+    if (creadorId) url += `creadorId=${encodeURIComponent(creadorId)}&`;
     
     // Eliminar el último '&' si existe
     url = url.endsWith('&') ? url.slice(0, -1) : url;
@@ -537,7 +539,6 @@ export const obtenerResultados = async (usuarioId = null, minijuegoId = null, cu
     }
     
     const data = await response.json();
-    console.log("Datos recibidos de la API:", JSON.stringify(data, null, 2));
     return data;
   } catch (error) {
     console.error("Error al obtener resultados:", error);
