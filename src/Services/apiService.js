@@ -2,7 +2,7 @@ import axios from "axios";
 import Config from "../config/routes";
 import sha256 from "crypto-js/sha256";
 
- // Importa la configuración
+// Importa la configuración
 
 const apiUrl = Config.apiUrl;
 
@@ -234,7 +234,9 @@ export const sendEmailReport = async (recipientEmail) => {
 // Obtener minijuegos por usuario
 export const getMinijuegosByUsuario = async (usuarioId) => {
   try {
-    const response = await axios.get(`${apiUrl}/api/Minijuego/ByUsuario/${usuarioId}`);
+    const response = await axios.get(
+      `${apiUrl}/api/Minijuego/ByUsuario/${usuarioId}`
+    );
     return response.data;
   } catch (error) {
     console.error("Error al obtener los minijuegos:", error);
@@ -246,10 +248,16 @@ export const getMinijuegosByUsuario = async (usuarioId) => {
 export const saveMinijuego = async (minijuego) => {
   try {
     if (minijuego.MinijuegoId) {
-      const response = await axios.put(`${apiUrl}/api/Minijuego/${minijuego.MinijuegoId}`, minijuego);
+      const response = await axios.put(
+        `${apiUrl}/api/Minijuego/${minijuego.MinijuegoId}`,
+        minijuego
+      );
       return response.data;
     } else {
-      const response = await axios.post(`${apiUrl}/api/Minijuego/RegistroMinijuego`, minijuego);
+      const response = await axios.post(
+        `${apiUrl}/api/Minijuego/RegistroMinijuego`,
+        minijuego
+      );
       return response.data;
     }
   } catch (error) {
@@ -261,26 +269,33 @@ export const saveMinijuego = async (minijuego) => {
 // Función para crear Temático con Apoyo
 export const createTematicoWithApoyo = async (tematicoData) => {
   try {
-    const response = await axios.post(`${apiUrl}/api/Tematico/CreateWithApoyo`, tematicoData);
+    const response = await axios.post(
+      `${apiUrl}/api/Tematico/CreateWithApoyo`,
+      tematicoData
+    );
     return response.data;
   } catch (error) {
     console.error("Error al crear Temático con Apoyo:", error);
     return {
       success: false,
-      message: error.response?.data?.message || "Error al crear Temático con Apoyo",
+      message:
+        error.response?.data?.message || "Error al crear Temático con Apoyo",
     };
   }
 };
 
 export const updateMinijuego = async (id, datos) => {
   try {
-    const response = await fetch(`${apiUrl}/api/Minijuego/EditarMinijuego/${id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(datos),
-    });
+    const response = await fetch(
+      `${apiUrl}/api/Minijuego/EditarMinijuego/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(datos),
+      }
+    );
     if (!response.ok) {
       throw new Error("Error al editar el minijuego");
     }
@@ -290,7 +305,6 @@ export const updateMinijuego = async (id, datos) => {
     return { success: false, message: error.message };
   }
 };
-
 
 export const deleteMinijuego = async (id) => {
   const response = await fetch(`${apiUrl}/api/Minijuego/${id}`, {
@@ -303,7 +317,10 @@ export const deleteMinijuego = async (id) => {
 
 export const changeEstadoMinijuego = async (id, estadoId) => {
   try {
-    const response = await axios.patch(`${apiUrl}/api/Minijuego/ChangeEstado/${id}`, { estadoId });
+    const response = await axios.patch(
+      `${apiUrl}/api/Minijuego/ChangeEstado/${id}`,
+      { estadoId }
+    );
     return response.data;
   } catch (error) {
     console.error("Error al cambiar el estado del minijuego:", error);
@@ -311,21 +328,52 @@ export const changeEstadoMinijuego = async (id, estadoId) => {
   }
 };
 
-export const exportarResultados = async (formato, usuarioId = null, minijuegoId = null, curso = null, tipoMinijuego = null, creadorId = null) => {
+export const exportarResultados = async (
+  tipoArchivo,
+  usuarioId = null,
+  minijuegoId = null,
+  curso = null,
+  tipoMinijuego = null,
+  creadorId = null
+) => {
   try {
-    let url = `${apiUrl}/api/Resultados/exportar/${formato}?`;
-    
-    if (usuarioId) url += `usuarioId=${encodeURIComponent(usuarioId)}&`;
-    if (curso) url += `curso=${encodeURIComponent(curso)}&`;
-    if (minijuegoId) url += `minijuegoId=${encodeURIComponent(minijuegoId)}&`;
-    if (tipoMinijuego) url += `tipoMinijuego=${encodeURIComponent(tipoMinijuego)}&`;
-    if (creadorId) url += `creadorId=${encodeURIComponent(creadorId)}&`;
-    
-    // Eliminar el último '&' si existe
-    url = url.endsWith('&') ? url.slice(0, -1) : url;
-    
-    // Resto de tu código para manejar la exportación
-    // ...
+    const params = new URLSearchParams();
+
+    params.append("tipoArchivo", tipoArchivo);
+    if (usuarioId) params.append("usuarioId", usuarioId);
+    if (minijuegoId) params.append("minijuegoId", minijuegoId);
+    if (curso) params.append("curso", curso);
+    if (tipoMinijuego) params.append("tipoMinijuego", tipoMinijuego);
+    if (creadorId) params.append("creadorId", creadorId);
+
+    const response = await axios.get(
+      `${apiUrl}/api/resultados/exportar?${params.toString()}`,
+      {
+        responseType: "blob", // Importante para descargar archivos
+      }
+    );
+
+    const contentDisposition = response.headers["content-disposition"];
+    let filename = `Resultados.${tipoArchivo === "excel" ? "xlsx" : "pdf"}`;
+
+    // Intentar extraer nombre de archivo de content-disposition si está disponible
+    if (contentDisposition) {
+      const filenameMatch = contentDisposition.match(
+        /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
+      );
+      if (filenameMatch && filenameMatch[1]) {
+        filename = filenameMatch[1].replace(/['"]/g, "");
+      }
+    }
+
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   } catch (error) {
     console.error("Error al exportar resultados:", error);
     throw error;
@@ -354,8 +402,8 @@ export const updateUserCredentials = async (id, credentials, token) => {
       credentials,
       {
         headers: {
-          'Authorization': `Bearer ${token}` // Incluir el token en el header
-        }
+          Authorization: `Bearer ${token}`, // Incluir el token en el header
+        },
       }
     );
 
@@ -386,15 +434,15 @@ export const importarEstudiantes = async (file) => {
         },
       }
     );
-    
+
     // Verifica si la respuesta es exitosa y devuelve solo un mensaje simple
     if (response.data) {
       return {
         success: true,
-        message: "Estudiantes Registrados con éxito"
+        message: "Estudiantes Registrados con éxito",
       };
     }
-    
+
     return response.data;
   } catch (error) {
     console.error("Error al importar estudiantes:", error);
@@ -416,7 +464,7 @@ export const getDialogos = async () => {
     // Extraer el array de valores del objeto JSON
     return data.$values || [];
   } catch (error) {
-    console.error('Error al obtener diálogos:', error);
+    console.error("Error al obtener diálogos:", error);
     throw error;
   }
 };
@@ -424,22 +472,22 @@ export const getDialogos = async () => {
 export const createDialogo = async (dialogoData) => {
   try {
     const response = await fetch(`${apiUrl}/api/Tematico/CreateApoyo`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         Titulo: dialogoData.titulo,
         Descripcion: dialogoData.descripcion,
       }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }
     return await response.json();
   } catch (error) {
-    console.error('Error al crear diálogo:', error);
+    console.error("Error al crear diálogo:", error);
     throw error;
   }
 };
@@ -447,22 +495,22 @@ export const createDialogo = async (dialogoData) => {
 export const updateDialogo = async (id, dialogoData) => {
   try {
     const response = await fetch(`${apiUrl}/api/Tematico/UpdateApoyo/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         Titulo: dialogoData.titulo,
         Descripcion: dialogoData.descripcion,
       }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }
     return await response.json();
   } catch (error) {
-    console.error('Error al actualizar diálogo:', error);
+    console.error("Error al actualizar diálogo:", error);
     throw error;
   }
 };
@@ -470,15 +518,15 @@ export const updateDialogo = async (id, dialogoData) => {
 export const deleteDialogo = async (id) => {
   try {
     const response = await fetch(`${apiUrl}/api/Tematico/DeleteApoyo/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
     });
-    
+
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }
     return await response.json();
   } catch (error) {
-    console.error('Error al eliminar diálogo:', error);
+    console.error("Error al eliminar diálogo:", error);
     throw error;
   }
 };
@@ -487,9 +535,9 @@ export const deleteDialogo = async (id) => {
 export const createTematico = async (tematicoData) => {
   try {
     const response = await fetch(`${apiUrl}/api/Tematico/CreateTematico`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         TituloTematico: tematicoData.tituloTematico,
@@ -497,43 +545,50 @@ export const createTematico = async (tematicoData) => {
         IdApoyo: tematicoData.idDialogo, // Renombrado para mantener consistencia
       }),
     });
-    
+
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }
     return await response.json();
   } catch (error) {
-    console.error('Error al crear temático:', error);
+    console.error("Error al crear temático:", error);
     throw error;
   }
 };
 
-export const obtenerResultados = async (usuarioId = null, minijuegoId = null, curso = null, tipoMinijuego = null, creadorId = null) => {
+export const obtenerResultados = async (
+  usuarioId = null,
+  minijuegoId = null,
+  curso = null,
+  tipoMinijuego = null,
+  creadorId = null
+) => {
   try {
     let url = `${apiUrl}/api/Resultados/filtrar?`;
-    
+
     // Agregar los parámetros en el orden correcto según el endpoint
     if (usuarioId) url += `usuarioId=${encodeURIComponent(usuarioId)}&`;
     if (curso) url += `curso=${encodeURIComponent(curso)}&`;
     if (minijuegoId) url += `minijuegoId=${encodeURIComponent(minijuegoId)}&`;
-    if (tipoMinijuego) url += `tipoMinijuego=${encodeURIComponent(tipoMinijuego)}&`;
+    if (tipoMinijuego)
+      url += `tipoMinijuego=${encodeURIComponent(tipoMinijuego)}&`;
     if (creadorId) url += `creadorId=${encodeURIComponent(creadorId)}&`;
-    
+
     // Eliminar el último '&' si existe
-    url = url.endsWith('&') ? url.slice(0, -1) : url;
-    
+    url = url.endsWith("&") ? url.slice(0, -1) : url;
+
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        "Accept": "application/json",
+        Accept: "application/json",
         "Content-Type": "application/json",
       },
     });
-    
+
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }
-    
+
     const data = await response.json();
     return data;
   } catch (error) {
@@ -542,37 +597,36 @@ export const obtenerResultados = async (usuarioId = null, minijuegoId = null, cu
   }
 };
 
-
 export const descargarPlantillaEstudiantes = async () => {
   try {
     const response = await fetch(`${apiUrl}/api/Usuario/download-template`, {
-      method: 'GET',
+      method: "GET",
     });
-    
+
     if (!response.ok) {
       throw new Error(`Error: ${response.status}`);
     }
-    
+
     // Obtener el blob de la respuesta
     const blob = await response.blob();
-    
+
     // Crear una URL para el blob
     const url = window.URL.createObjectURL(blob);
-    
+
     // Crear un elemento <a> para descargar el archivo
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'PlantillaImportacionEstudiantes.xlsx';
+    a.download = "PlantillaImportacionEstudiantes.xlsx";
     document.body.appendChild(a);
     a.click();
-    
+
     // Limpiar
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
-    
+
     return { success: true };
   } catch (error) {
-    console.error('Error al descargar la plantilla:', error);
+    console.error("Error al descargar la plantilla:", error);
     throw error;
   }
 };
