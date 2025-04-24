@@ -17,6 +17,22 @@ const ResultadosTable = () => {
   const [showExportModal, setShowExportModal] = useState(false);
   const [mostrarGraficos, setMostrarGraficos] = useState(false);
   const [tipoGrafico, setTipoGrafico] = useState("barras");
+  const [creadorId, setCreadorId] = useState(null);
+
+  useEffect(() => {
+    // Obtener el ID del creador desde localStorage al cargar el componente
+    try {
+      const userStorage = localStorage.getItem("user");
+      if (userStorage) {
+        const userData = JSON.parse(userStorage);
+        if (userData && userData.id) {
+          setCreadorId(userData.id);
+        }
+      }
+    } catch (err) {
+      // Error silencioso - si no se puede obtener el creadorId, seguirá siendo null
+    }
+  }, []);
 
   const cargarResultados = async () => {
     setLoading(true);
@@ -28,7 +44,9 @@ const ResultadosTable = () => {
       const data = await obtenerResultados(
         usuarioIdNum,
         minijuegoIdNum,
-        curso || null
+        curso || null,
+        null, // tipoMinijuego (ya no se usa en la llamada API)
+        creadorId // Pasar el ID del creador obtenido del localStorage
       );
       
       let resultadosProcesados = [];
@@ -65,7 +83,6 @@ const ResultadosTable = () => {
       
       setResultados(resultadosProcesados);
     } catch (err) {
-      console.error("Error al cargar resultados:", err);
       setError("Error al cargar los resultados. Por favor, intenta de nuevo.");
     } finally {
       setLoading(false);
@@ -73,8 +90,10 @@ const ResultadosTable = () => {
   };
   
   useEffect(() => {
-    cargarResultados();
-  }, []);
+    if (creadorId !== null) {
+      cargarResultados();
+    }
+  }, [creadorId]); // Cargar resultados cuando se obtenga el creadorId
 
   const handleExport = async (tipoArchivo) => {
     try {
@@ -85,11 +104,12 @@ const ResultadosTable = () => {
         tipoArchivo, 
         usuarioIdNum, 
         minijuegoIdNum, 
-        curso || null
+        curso || null,
+        null, // tipoMinijuego
+        creadorId // Pasar el ID del creador
       );
       setShowExportModal(false);
     } catch (error) {
-      console.error("Error al exportar:", error);
       setError("Error al exportar los resultados. Por favor, intenta de nuevo.");
     }
   };
