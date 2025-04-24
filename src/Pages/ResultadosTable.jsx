@@ -30,7 +30,7 @@ const ResultadosTable = () => {
         }
       }
     } catch (err) {
-      // Error silencioso - si no se puede obtener el creadorId, seguirá siendo null
+     console.log("Usuario Creador No encontrado");
     }
   }, []);
 
