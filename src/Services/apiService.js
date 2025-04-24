@@ -311,28 +311,24 @@ export const changeEstadoMinijuego = async (id, estadoId) => {
   }
 };
 
-export const exportarResultados = async (tipoArchivo, usuarioId = null, minijuegoId = null) => {
+export const exportarResultados = async (formato, usuarioId = null, minijuegoId = null, curso = null, tipoMinijuego = null, creadorId = null) => {
   try {
-      const params = new URLSearchParams();
-      params.append("tipoArchivo", tipoArchivo);
-      if (usuarioId) params.append("usuarioId", usuarioId);
-      if (minijuegoId) params.append("minijuegoId", minijuegoId);
-
-      const response = await axios.get(`${apiUrl}/api/resultados/exportar?${params.toString()}`, {
-          responseType: "blob", // Importante para descargar archivos
-      });
-
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `Resultados.${tipoArchivo === "excel" ? "xlsx" : "pdf"}`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+    let url = `${apiUrl}/api/Resultados/exportar/${formato}?`;
+    
+    if (usuarioId) url += `usuarioId=${encodeURIComponent(usuarioId)}&`;
+    if (curso) url += `curso=${encodeURIComponent(curso)}&`;
+    if (minijuegoId) url += `minijuegoId=${encodeURIComponent(minijuegoId)}&`;
+    if (tipoMinijuego) url += `tipoMinijuego=${encodeURIComponent(tipoMinijuego)}&`;
+    if (creadorId) url += `creadorId=${encodeURIComponent(creadorId)}&`;
+    
+    // Eliminar el último '&' si existe
+    url = url.endsWith('&') ? url.slice(0, -1) : url;
+    
+    // Resto de tu código para manejar la exportación
+    // ...
   } catch (error) {
-      console.error("Error al exportar resultados:", error);
-      throw error;
+    console.error("Error al exportar resultados:", error);
+    throw error;
   }
 };
 
