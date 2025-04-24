@@ -347,7 +347,7 @@ export const exportarResultados = async (
     if (creadorId) params.append("creadorId", creadorId);
 
     const response = await axios.get(
-      `${apiUrl}/api/resultados/exportar?${params.toString()}`,
+      `${apiUrl}/api/resultados/exportar/${tipoArchivo}?${params.toString()}`,
       {
         responseType: "blob", // Importante para descargar archivos
       }
