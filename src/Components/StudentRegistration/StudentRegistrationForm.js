@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { registerStudent, obtenerCursos } from "../../Services/apiService";
-import CryptoJS from 'crypto-js';
+import CryptoJS from "crypto-js";
 import "./StudentRegistrationForm.css";
 import Header from "../Header/Header";
 
@@ -22,10 +22,19 @@ const RegisterStudentForm = () => {
     const fetchCursos = async () => {
       try {
         setLoading(true);
-        const cursosData = await obtenerCursos();
-        setCursos(cursosData);
+        const response = await obtenerCursos();
+        console.log("Respuesta de cursos:", response);
+
+        // Manejar la estructura específica de la respuesta
+        if (response && response.$values && Array.isArray(response.$values)) {
+          setCursos(response.$values);
+        } else {
+          console.error("Formato de respuesta no esperado:", response);
+          setCursos([]);
+        }
       } catch (error) {
         console.error("Error al cargar los cursos:", error);
+        setCursos([]);
       } finally {
         setLoading(false);
       }
@@ -49,7 +58,7 @@ const RegisterStudentForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Hashear la contraseña antes de enviarla
     const hashedFormData = {
       ...formData,
@@ -73,7 +82,10 @@ const RegisterStudentForm = () => {
           correoElectronico: "",
         });
       } else {
-        setMessage(response.message || "Error en el registro. Verifica los datos ingresados");
+        setMessage(
+          response.message ||
+            "Error en el registro. Verifica los datos ingresados"
+        );
         console.log(response);
         setIsSuccess(false);
       }
@@ -121,7 +133,7 @@ const RegisterStudentForm = () => {
             value={formData.contrasena}
             onChange={handleInputChange}
           />
-          
+
           {/* Selector de curso con los valores del controlador */}
           <select
             id="input-curso"
@@ -149,11 +161,15 @@ const RegisterStudentForm = () => {
             value={formData.correoElectronico}
             onChange={handleInputChange}
           />
-          <button id="submit-button" type="submit">Registrar</button>
+          <button id="submit-button" type="submit">
+            Registrar
+          </button>
         </form>
 
         {message && (
-          <p id="form-message" style={{ color: isSuccess ? "green" : "red" }}>{message}</p>
+          <p id="form-message" style={{ color: isSuccess ? "green" : "red" }}>
+            {message}
+          </p>
         )}
         <p id="login-link">
           ¿Ya tienes una cuenta? <a href="/login">Inicia sesión aquí</a>
