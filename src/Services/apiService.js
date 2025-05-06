@@ -630,3 +630,25 @@ export const descargarPlantillaEstudiantes = async () => {
     throw error;
   }
 };
+
+export const obtenerCursos = async () => {
+  try {
+    const response = await fetch(`${apiUrl}/api/Curso`, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error al obtener la lista de cursos:", error);
+    throw error;
+  }
+};
