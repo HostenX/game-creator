@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { registerStudent } from "../../Services/apiService";
-import CryptoJS from 'crypto-js'; // Asegúrate de instalar crypto-js con `npm install crypto-js`
+import React, { useState, useEffect } from "react";
+import { registerStudent, obtenerCursos } from "../../Services/apiService";
+import CryptoJS from 'crypto-js';
 import "./StudentRegistrationForm.css";
 import Header from "../Header/Header";
 
@@ -10,10 +10,29 @@ const RegisterStudentForm = () => {
     nombreCompleto: "",
     contrasena: "",
     curso: "",
-    correoElectronico: "", // Cambiado a correoElectronico
+    correoElectronico: "",
   });
   const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(null);
+  const [cursos, setCursos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Cargar la lista de cursos al montar el componente
+  useEffect(() => {
+    const fetchCursos = async () => {
+      try {
+        setLoading(true);
+        const cursosData = await obtenerCursos();
+        setCursos(cursosData);
+      } catch (error) {
+        console.error("Error al cargar los cursos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCursos();
+  }, []);
 
   // Función para hash de la contraseña
   const hashPassword = (password) => {
@@ -51,7 +70,7 @@ const RegisterStudentForm = () => {
           nombreCompleto: "",
           contrasena: "",
           curso: "",
-          correoElectronico: "", // Reiniciar el campo de correo electrónico
+          correoElectronico: "",
         });
       } else {
         setMessage(response.message || "Error en el registro. Verifica los datos ingresados");
@@ -102,14 +121,26 @@ const RegisterStudentForm = () => {
             value={formData.contrasena}
             onChange={handleInputChange}
           />
-          <input
-            type="text"
+          
+          {/* Selector de curso con los valores del controlador */}
+          <select
             id="input-curso"
             name="curso"
-            placeholder="Curso"
             value={formData.curso}
             onChange={handleInputChange}
-          />
+          >
+            <option value="">Selecciona un curso</option>
+            {loading ? (
+              <option disabled>Cargando cursos...</option>
+            ) : (
+              cursos.map((curso, index) => (
+                <option key={index} value={curso}>
+                  {curso}
+                </option>
+              ))
+            )}
+          </select>
+
           <input
             type="email"
             id="input-correo-electronico"
