@@ -116,7 +116,7 @@ const UnityGame = ({ show, onClose }) => {
         
         const buildTitle = document.createElement("div");
         buildTitle.id = "unity-build-title";
-        buildTitle.textContent = "PoryectoFinalUdeC";
+        buildTitle.textContent = "ProyectoFinalUdeC";
         unityFooter.appendChild(buildTitle);
         
         // Crear botón de cerrar personalizado e integrarlo en el footer de Unity
