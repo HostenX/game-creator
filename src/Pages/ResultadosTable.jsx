@@ -41,6 +41,39 @@ const ResultadosTable = () => {
     }
   }, []);
 
+  // Función unificada para formatear tiempo
+  const formatearTiempo = (segundos) => {
+    if (!segundos && segundos !== 0) return "N/A";
+    const minutos = Math.floor(segundos / 60);
+    const segs = segundos % 60;
+    return `${minutos.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
+  };
+
+  // Función unificada para formatear fecha
+  const formatearFecha = (fechaStr) => {
+    if (!fechaStr) return "N/A";
+    const fecha = new Date(fechaStr);
+    return fecha.toLocaleString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  // Función para extraer el tipo de minijuego
+  const extraerTipoMinijuego = (nombreMinijuego) => {
+    if (!nombreMinijuego) return null;
+    
+    if (nombreMinijuego.includes("Complete")) return "Completar";
+    if (nombreMinijuego.includes("Opposites")) return "Opuestos";
+    if (nombreMinijuego.includes("Tense")) return "Tiempo Verbal";
+    if (nombreMinijuego.includes("Irregular Verbs")) return "Verbos Irregulares";
+    
+    return null;
+  };
+
   const cargarResultados = async () => {
     setLoading(true);
     try {
@@ -146,38 +179,18 @@ const ResultadosTable = () => {
     );
   };
 
-  // Función para intentar extraer el tipo de minijuego del nombre
-  const extraerTipoMinijuego = (nombreMinijuego) => {
-    if (!nombreMinijuego) return null;
+  // Funciones utilitarias para cálculos estadísticos
+  const calcularMediaYDesviacion = (datos) => {
+    if (!datos || datos.length === 0) return { media: 0, desviacionEstandar: 0 };
     
-    if (nombreMinijuego.includes("Complete")) return "Completar";
-    if (nombreMinijuego.includes("Opposites")) return "Opuestos";
-    if (nombreMinijuego.includes("Tense")) return "Tiempo Verbal";
-    if (nombreMinijuego.includes("Irregular Verbs")) return "Verbos Irregulares";
+    const media = datos.reduce((sum, valor) => sum + valor, 0) / datos.length;
+    const varianza = datos.reduce((sum, valor) => sum + Math.pow(valor - media, 2), 0) / datos.length;
+    const desviacionEstandar = Math.sqrt(varianza);
     
-    return null;
+    return { media, desviacionEstandar };
   };
 
-  const formatearTiempo = (segundos) => {
-    if (!segundos && segundos !== 0) return "N/A";
-    const minutos = Math.floor(segundos / 60);
-    const segs = segundos % 60;
-    return `${minutos.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
-  };
-
-  const formatearFecha = (fechaStr) => {
-    if (!fechaStr) return "N/A";
-    const fecha = new Date(fechaStr);
-    return fecha.toLocaleString('es-ES', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  // Preparar datos para gráficos
+  // Preparar datos para gráficos de barras y líneas
   const prepararDatosGraficos = () => {
     if (!resultados || resultados.length === 0) return [];
 
@@ -213,7 +226,7 @@ const ResultadosTable = () => {
     return Object.values(datosPorMinijuego);
   };
 
-  // Datos para gráfico de distribución de intentos por minijuego (pie)
+  // Datos para gráfico de pie
   const prepararDatosPie = () => {
     if (!resultados || resultados.length === 0) return [];
     
@@ -230,18 +243,7 @@ const ResultadosTable = () => {
     }));
   };
   
-  // Funciones utilitarias para cálculos estadísticos
-  const calcularMediaYDesviacion = (datos) => {
-    if (!datos || datos.length === 0) return { media: 0, desviacionEstandar: 0 };
-    
-    const media = datos.reduce((sum, valor) => sum + valor, 0) / datos.length;
-    const varianza = datos.reduce((sum, valor) => sum + Math.pow(valor - media, 2), 0) / datos.length;
-    const desviacionEstandar = Math.sqrt(varianza);
-    
-    return { media, desviacionEstandar };
-  };
-  
-  // Preparar datos para la distribución normal
+  // Preparar datos para la distribución normal - MODIFICADO PARA USAR TIEMPO EN EJE Y, PUNTAJE EN EJE X
   const prepararDatosDistribucionNormal = () => {
     if (!resultados || resultados.length === 0 || !minijuegoSeleccionado) return [];
     
@@ -262,36 +264,43 @@ const ResultadosTable = () => {
       });
     }
     
-    // Extraer tiempos
+    if (datosFiltrados.length === 0) return [];
+    
+    // Extraer puntajes (ahora para eje X) y tiempos (ahora para eje Y)
+    const puntajes = datosFiltrados.map(resultado => resultado.puntaje || 0);
     const tiempos = datosFiltrados.map(resultado => resultado.tiempoSegundos || 0);
     
-    if (tiempos.length === 0) return [];
-    
-    // Calcular media y desviación estándar
-    const { media, desviacionEstandar } = calcularMediaYDesviacion(tiempos);
+    // Calcular media y desviación estándar para puntajes (eje X)
+    const { media: mediaPuntaje, desviacionEstandar: desvPuntaje } = calcularMediaYDesviacion(puntajes);
     
     // Generar puntos para la curva normal
     const puntosCurva = [];
-    const rango = Math.max(...tiempos) - Math.min(...tiempos);
-    const min = Math.max(0, Math.min(...tiempos) - (rango * 0.1));
-    const max = Math.max(...tiempos) + (rango * 0.1);
-    const paso = rango / 30;
+    const rangoPuntajes = Math.max(...puntajes) - Math.min(...puntajes);
+    const minPuntaje = Math.max(0, Math.min(...puntajes) - (rangoPuntajes * 0.1));
+    const maxPuntaje = Math.max(...puntajes) + (rangoPuntajes * 0.1);
+    const paso = rangoPuntajes / 30 || 1; // Evitar división por cero
     
-    for (let x = min; x <= max; x += paso) {
-      const y = (1 / (desviacionEstandar * Math.sqrt(2 * Math.PI))) * 
-                Math.exp(-Math.pow(x - media, 2) / (2 * Math.pow(desviacionEstandar, 2)));
+    const maxTiempo = Math.max(...tiempos); // Para escalar la curva normal
+    
+    for (let x = minPuntaje; x <= maxPuntaje; x += paso) {
+      // Calcular la altura de la curva normal para este punto
+      const y = (1 / (desvPuntaje * Math.sqrt(2 * Math.PI))) * 
+                Math.exp(-Math.pow(x - mediaPuntaje, 2) / (2 * Math.pow(desvPuntaje, 2)));
+      
+      // Escalar la altura para que sea visible y use tiempos como eje Y
+      const escalado = y * (maxTiempo * 1.2); // Usar maxTiempo para escalar
       
       puntosCurva.push({
-        x,
-        y: y * (tiempos.length * desviacionEstandar * 2), // Escalamos para hacerlo visible
+        x, // Puntaje como X
+        y: escalado, // Altura escalada de la curva normal como Y
         tipo: 'curva'
       });
     }
     
-    // Agregar puntos de datos reales
+    // Agregar puntos de datos reales (ahora con puntaje en X, tiempo en Y)
     const datosReales = datosFiltrados.map(resultado => ({
-      x: resultado.tiempoSegundos || 0,
-      y: 0, // Se colocan en el eje x
+      x: resultado.puntaje || 0, // Puntaje como X
+      y: resultado.tiempoSegundos || 0, // Tiempo como Y
       nombre: resultado.nombreCompleto || "N/A",
       curso: resultado.curso || "N/A",
       puntaje: resultado.puntaje || 0,
@@ -304,9 +313,95 @@ const ResultadosTable = () => {
     return [...puntosCurva, ...datosReales];
   };
 
-  // Colores para gráficos
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-  
+  // Función para renderizar el componente de filtros para la distribución normal
+  const renderFiltrosDistribucion = () => (
+    <div className="filtros-distribucion">
+      <div className="filtro-grupo">
+        <label>Seleccionar Minijuego (obligatorio):</label>
+        <select 
+          value={minijuegoSeleccionado}
+          onChange={(e) => setMinijuegoSeleccionado(e.target.value)}
+          required
+        >
+          <option value="">-- Seleccionar Minijuego --</option>
+          {miniJuegosDisponibles.map((minijuego, index) => (
+            <option key={`minijuego-${index}`} value={minijuego}>
+              {minijuego}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      <div className="filtro-grupo">
+        <label>Fecha Inicio:</label>
+        <input
+          type="date"
+          value={fechaInicio}
+          onChange={(e) => setFechaInicio(e.target.value)}
+        />
+      </div>
+      
+      <div className="filtro-grupo">
+        <label>Fecha Fin:</label>
+        <input
+          type="date"
+          value={fechaFin}
+          onChange={(e) => setFechaFin(e.target.value)}
+        />
+      </div>
+    </div>
+  );
+
+  // Renderizar estadísticas para un minijuego seleccionado
+  const renderEstadisticasMinijuego = () => {
+    const datos = prepararDatosDistribucionNormal().filter(d => d.tipo === 'dato');
+    if (datos.length === 0) return null;
+    
+    const tiempos = datos.map(d => d.y); // Ahora Y contiene los tiempos
+    const puntajes = datos.map(d => d.x); // Ahora X contiene los puntajes
+    
+    const { media: mediaTiempo } = calcularMediaYDesviacion(tiempos);
+    const { media: mediaPuntaje } = calcularMediaYDesviacion(puntajes);
+    
+    const minTiempo = Math.min(...tiempos);
+    const maxTiempo = Math.max(...tiempos);
+    const minPuntaje = Math.min(...puntajes);
+    const maxPuntaje = Math.max(...puntajes);
+    
+    return (
+      <div className="stats-grid">
+        <div className="stat-item">
+          <span className="stat-label">Total estudiantes:</span>
+          <span className="stat-value">{datos.length}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Tiempo promedio:</span>
+          <span className="stat-value">{formatearTiempo(mediaTiempo)}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Tiempo mínimo:</span>
+          <span className="stat-value">{formatearTiempo(minTiempo)}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Tiempo máximo:</span>
+          <span className="stat-value">{formatearTiempo(maxTiempo)}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Puntaje promedio:</span>
+          <span className="stat-value">{mediaPuntaje.toFixed(1)}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Puntaje mínimo:</span>
+          <span className="stat-value">{minPuntaje}</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-label">Puntaje máximo:</span>
+          <span className="stat-value">{maxPuntaje}</span>
+        </div>
+      </div>
+    );
+  };
+
   // Tooltip personalizado para el gráfico de distribución normal
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length > 0 && payload[0].payload.tipo === 'dato') {
@@ -332,6 +427,9 @@ const ResultadosTable = () => {
     }
     return null;
   };
+
+  // Colores para gráficos
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
   return (
     <div className="resultados-container">
@@ -390,143 +488,7 @@ const ResultadosTable = () => {
         </button>
       </div>
       
-      {/* Sección para el gráfico de distribución normal - ahora integrado con los otros gráficos */}
-      {mostrarGraficos && tipoGrafico === "distribucion" && (
-        <div className="distribucion-normal-container">
-          <h3>Distribución Normal de Tiempos por Estudiante</h3>
-          
-          <div className="filtros-distribucion">
-            <div className="filtro-grupo">
-              <label>Seleccionar Minijuego (obligatorio):</label>
-              <select 
-                value={minijuegoSeleccionado}
-                onChange={(e) => setMinijuegoSeleccionado(e.target.value)}
-                required
-              >
-                <option value="">-- Seleccionar Minijuego --</option>
-                {miniJuegosDisponibles.map((minijuego, index) => (
-                  <option key={`minijuego-${index}`} value={minijuego}>
-                    {minijuego}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="filtro-grupo">
-              <label>Fecha Inicio:</label>
-              <input
-                type="date"
-                value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-              />
-            </div>
-            
-            <div className="filtro-grupo">
-              <label>Fecha Fin:</label>
-              <input
-                type="date"
-                value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          {!minijuegoSeleccionado ? (
-            <div className="aviso-seleccion">
-              <p>Por favor, selecciona un minijuego para visualizar la distribución normal de tiempos.</p>
-            </div>
-          ) : prepararDatosDistribucionNormal().length === 0 ? (
-            <div className="no-datos">
-              <p>No hay datos suficientes para generar la distribución normal con los filtros seleccionados.</p>
-            </div>
-          ) : (
-            <div className="grafico-distribucion-wrapper">
-              <ResponsiveContainer width="100%" height={400}>
-                <ScatterChart
-                  margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                  <XAxis 
-                    type="number" 
-                    dataKey="x" 
-                    name="Tiempo (segundos)" 
-                    unit="s"
-                    stroke="#fff"
-                    label={{ 
-                      value: 'Tiempo (segundos)', 
-                      position: 'insideBottom', 
-                      offset: -5,
-                      fill: '#fff'
-                    }}
-                  />
-                  <YAxis 
-                    type="number" 
-                    dataKey="y" 
-                    name="Distribución"
-                    stroke="#fff"
-                    tick={false}
-                    axisLine={false}
-                  />
-                  <ZAxis range={[60, 60]} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Scatter
-                    name="Curva Normal"
-                    data={prepararDatosDistribucionNormal().filter(d => d.tipo === 'curva')}
-                    line={{ stroke: '#00C49F', strokeWidth: 2 }}
-                    fill="#00C49F"
-                  />
-                  <Scatter
-                    name="Datos individuales"
-                    data={prepararDatosDistribucionNormal().filter(d => d.tipo === 'dato')}
-                    fill="#FF8042"
-                    shape="diamond"
-                  />
-                  <Legend 
-                    verticalAlign="top"
-                    height={36}
-                    wrapperStyle={{ fontSize: '12px', color: '#fff' }}
-                  />
-                </ScatterChart>
-              </ResponsiveContainer>
-              
-              <div className="estadisticas-distribucion">
-                <h4>Estadísticas para {minijuegoSeleccionado}</h4>
-                {(() => {
-                  const datos = prepararDatosDistribucionNormal().filter(d => d.tipo === 'dato');
-                  if (datos.length === 0) return null;
-                  
-                  const tiempos = datos.map(d => d.x);
-                  const { media } = calcularMediaYDesviacion(tiempos);
-                  const min = Math.min(...tiempos);
-                  const max = Math.max(...tiempos);
-                  
-                  return (
-                    <div className="stats-grid">
-                      <div className="stat-item">
-                        <span className="stat-label">Total estudiantes:</span>
-                        <span className="stat-value">{datos.length}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Tiempo promedio:</span>
-                        <span className="stat-value">{formatearTiempo(media)}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Tiempo mínimo:</span>
-                        <span className="stat-value">{formatearTiempo(min)}</span>
-                      </div>
-                      <div className="stat-item">
-                        <span className="stat-label">Tiempo máximo:</span>
-                        <span className="stat-value">{formatearTiempo(max)}</span>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-      
+      {/* Sección para mostrar gráficos */}
       {mostrarGraficos && resultados.length > 0 && (
         <div className="graficos-container">
           <div className="selector-grafico">
@@ -538,7 +500,7 @@ const ResultadosTable = () => {
               <option value="barras">Puntaje Promedio por Minijuego</option>
               <option value="lineas">Tiempo Promedio por Minijuego</option>
               <option value="pie">Distribución de Intentos</option>
-              <option value="distribucion">Distribución Normal de Tiempos</option>
+              <option value="distribucion">Distribución Normal (Puntaje vs Tiempo)</option>
             </select>
           </div>
           
@@ -610,7 +572,7 @@ const ResultadosTable = () => {
             )}
             
             {tipoGrafico === "pie" && (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={600}>
                 <PieChart>
                   <Pie
                     data={prepararDatosPie()}
@@ -633,45 +595,83 @@ const ResultadosTable = () => {
             )}
             
             {tipoGrafico === "distribucion" && (
-              <div className="filtros-distribucion">
-                <div className="filtro-grupo">
-                  <label>Seleccionar Minijuego (obligatorio):</label>
-                  <select 
-                    value={minijuegoSeleccionado}
-                    onChange={(e) => setMinijuegoSeleccionado(e.target.value)}
-                    required
-                  >
-                    <option value="">-- Seleccionar Minijuego --</option>
-                    {miniJuegosDisponibles.map((minijuego, index) => (
-                      <option key={`minijuego-${index}`} value={minijuego}>
-                        {minijuego}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <>
+                {renderFiltrosDistribucion()}
                 
-                <div className="filtro-grupo">
-                  <label>Fecha Inicio:</label>
-                  <input
-                    type="date"
-                    value={fechaInicio}
-                    onChange={(e) => setFechaInicio(e.target.value)}
-                  />
-                </div>
-                
-                <div className="filtro-grupo">
-                  <label>Fecha Fin:</label>
-                  <input
-                    type="date"
-                    value={fechaFin}
-                    onChange={(e) => setFechaFin(e.target.value)}
-                  />
-                </div>
-              </div>
+                {!minijuegoSeleccionado ? (
+                  <div className="aviso-seleccion">
+                    <p>Por favor, selecciona un minijuego para visualizar la distribución.</p>
+                  </div>
+                ) : prepararDatosDistribucionNormal().length === 0 ? (
+                  <div className="no-datos">
+                    <p>No hay datos suficientes para generar la distribución con los filtros seleccionados.</p>
+                  </div>
+                ) : (
+                  <div className="grafico-distribucion-wrapper">
+                    <ResponsiveContainer width="100%" height={400}>
+                      <ScatterChart
+                        margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                        <XAxis 
+                          type="number" 
+                          dataKey="x" 
+                          name="Puntaje" 
+                          stroke="#fff"
+                          label={{ 
+                            value: 'Puntaje', 
+                            position: 'insideBottom', 
+                            offset: -5,
+                            fill: '#fff'
+                          }}
+                        />
+                        <YAxis 
+                          type="number" 
+                          dataKey="y" 
+                          name="Tiempo (segundos)"
+                          unit="s"
+                          stroke="#fff"
+                          label={{ 
+                            value: 'Tiempo (segundos)', 
+                            angle: -90,
+                            position: 'insideLeft', 
+                            offset: 10,
+                            fill: '#fff'
+                          }}
+                        />
+                        <ZAxis range={[60, 60]} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Scatter
+                          name="Curva Normal"
+                          data={prepararDatosDistribucionNormal().filter(d => d.tipo === 'curva')}
+                          line={{ stroke: '#00C49F', strokeWidth: 2 }}
+                          fill="#00C49F"
+                        />
+                        <Scatter
+                          name="Datos individuales"
+                          data={prepararDatosDistribucionNormal().filter(d => d.tipo === 'dato')}
+                          fill="#FF8042"
+                          shape="diamond"
+                        />
+                        <Legend 
+                          verticalAlign="top"
+                          height={36}
+                          wrapperStyle={{ fontSize: '12px', color: '#fff' }}
+                        />
+                      </ScatterChart>
+                    </ResponsiveContainer>
+                    
+                    <div className="estadisticas-distribucion">
+                      <h4>Estadísticas para {minijuegoSeleccionado}</h4>
+                      {renderEstadisticasMinijuego()}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
           
-          {tipoGrafico !== "pie" && (
+          {tipoGrafico !== "pie" && tipoGrafico !== "distribucion" && (
             <div className="estadisticas-resumen">
               <h3>Estadísticas por Minijuego</h3>
               <table className="stats-table">
@@ -698,13 +698,15 @@ const ResultadosTable = () => {
           )}
         </div>
       )}
-      
+
       {loading ? (
         <div className="loading">Cargando resultados...</div>
       ) : error ? (
         <div className="error-message">{error}</div>
       ) : resultados.length === 0 ? (
-        <div className="no-resultados">No se encontraron resultados con los filtros aplicados.</div>
+        <div className="no-resultados">
+          No se encontraron resultados con los filtros aplicados.
+        </div>
       ) : (
         <div className="tabla-container">
           <table className="resultados-tabla">
@@ -722,29 +724,40 @@ const ResultadosTable = () => {
               </tr>
             </thead>
             <tbody>
-              {resultados.map((resultado, index) => renderizarFila(resultado, index))}
+              {resultados.map((resultado, index) =>
+                renderizarFila(resultado, index)
+              )}
             </tbody>
           </table>
         </div>
       )}
-      
+
       {showExportModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <h2>Exportar Resultados</h2>
-            <p>Selecciona el formato para exportar los resultados con los filtros actuales:</p>
-            
+            <p>
+              Selecciona el formato para exportar los resultados con los filtros
+              actuales:
+            </p>
+
             <div className="modal-buttons">
               <button onClick={() => handleExport("pdf")}>Generar PDF</button>
-              <button onClick={() => handleExport("excel")}>Generar Excel</button>
-              <button onClick={() => setShowExportModal(false)}>Cancelar</button>
+              <button onClick={() => handleExport("excel")}>
+                Generar Excel
+              </button>
+              <button onClick={() => setShowExportModal(false)}>
+                Cancelar
+              </button>
             </div>
           </div>
         </div>
       )}
-      
+
       <div className="resultados-stats">
-        <p>Total de resultados: <strong>{resultados.length}</strong></p>
+        <p>
+          Total de resultados: <strong>{resultados.length}</strong>
+        </p>
       </div>
     </div>
   );
