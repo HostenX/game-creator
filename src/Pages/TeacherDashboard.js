@@ -20,8 +20,7 @@ const ResultadosTable = () => {
   const [tipoGrafico, setTipoGrafico] = useState("barras");
   const [creadorId, setCreadorId] = useState(null);
   
-  // Nuevos estados para el gráfico de distribución normal
-  const [mostrarDistribucionNormal, setMostrarDistribucionNormal] = useState(false);
+  // Estados para el gráfico de distribución normal
   const [minijuegoSeleccionado, setMinijuegoSeleccionado] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
@@ -231,6 +230,17 @@ const ResultadosTable = () => {
     }));
   };
   
+  // Funciones utilitarias para cálculos estadísticos
+  const calcularMediaYDesviacion = (datos) => {
+    if (!datos || datos.length === 0) return { media: 0, desviacionEstandar: 0 };
+    
+    const media = datos.reduce((sum, valor) => sum + valor, 0) / datos.length;
+    const varianza = datos.reduce((sum, valor) => sum + Math.pow(valor - media, 2), 0) / datos.length;
+    const desviacionEstandar = Math.sqrt(varianza);
+    
+    return { media, desviacionEstandar };
+  };
+  
   // Preparar datos para la distribución normal
   const prepararDatosDistribucionNormal = () => {
     if (!resultados || resultados.length === 0 || !minijuegoSeleccionado) return [];
@@ -258,9 +268,7 @@ const ResultadosTable = () => {
     if (tiempos.length === 0) return [];
     
     // Calcular media y desviación estándar
-    const media = tiempos.reduce((sum, tiempo) => sum + tiempo, 0) / tiempos.length;
-    const varianza = tiempos.reduce((sum, tiempo) => sum + Math.pow(tiempo - media, 2), 0) / tiempos.length;
-    const desviacionEstandar = Math.sqrt(varianza);
+    const { media, desviacionEstandar } = calcularMediaYDesviacion(tiempos);
     
     // Generar puntos para la curva normal
     const puntosCurva = [];
@@ -305,11 +313,12 @@ const ResultadosTable = () => {
       const data = payload[0].payload;
       return (
         <div className="custom-tooltip" style={{ 
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          backgroundColor: '#2a1a4a',
           padding: '10px',
           border: '1px solid #ccc',
           borderRadius: '5px',
-          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+          color: '#fff'
         }}>
           <p><strong>Estudiante:</strong> {data.nombre}</p>
           <p><strong>Curso:</strong> {data.curso}</p>
@@ -379,17 +388,10 @@ const ResultadosTable = () => {
         >
           {mostrarGraficos ? "Ocultar Gráficos" : "Mostrar Gráficos"}
         </button>
-        
-        <button 
-          className="distribucion-btn"
-          onClick={() => setMostrarDistribucionNormal(!mostrarDistribucionNormal)}
-        >
-          {mostrarDistribucionNormal ? "Ocultar Distribución Normal" : "Mostrar Distribución Normal"}
-        </button>
       </div>
       
-      {/* Sección para el gráfico de distribución normal */}
-      {mostrarDistribucionNormal && (
+      {/* Sección para el gráfico de distribución normal - ahora integrado con los otros gráficos */}
+      {mostrarGraficos && tipoGrafico === "distribucion" && (
         <div className="distribucion-normal-container">
           <h3>Distribución Normal de Tiempos por Estudiante</h3>
           
@@ -494,7 +496,7 @@ const ResultadosTable = () => {
                   if (datos.length === 0) return null;
                   
                   const tiempos = datos.map(d => d.x);
-                  const media = tiempos.reduce((a, b) => a + b, 0) / tiempos.length;
+                  const { media } = calcularMediaYDesviacion(tiempos);
                   const min = Math.min(...tiempos);
                   const max = Math.max(...tiempos);
                   
@@ -536,6 +538,7 @@ const ResultadosTable = () => {
               <option value="barras">Puntaje Promedio por Minijuego</option>
               <option value="lineas">Tiempo Promedio por Minijuego</option>
               <option value="pie">Distribución de Intentos</option>
+              <option value="distribucion">Distribución Normal de Tiempos</option>
             </select>
           </div>
           
@@ -627,6 +630,44 @@ const ResultadosTable = () => {
                   <Legend wrapperStyle={{ color: '#fff' }} />
                 </PieChart>
               </ResponsiveContainer>
+            )}
+            
+            {tipoGrafico === "distribucion" && (
+              <div className="filtros-distribucion">
+                <div className="filtro-grupo">
+                  <label>Seleccionar Minijuego (obligatorio):</label>
+                  <select 
+                    value={minijuegoSeleccionado}
+                    onChange={(e) => setMinijuegoSeleccionado(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Seleccionar Minijuego --</option>
+                    {miniJuegosDisponibles.map((minijuego, index) => (
+                      <option key={`minijuego-${index}`} value={minijuego}>
+                        {minijuego}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="filtro-grupo">
+                  <label>Fecha Inicio:</label>
+                  <input
+                    type="date"
+                    value={fechaInicio}
+                    onChange={(e) => setFechaInicio(e.target.value)}
+                  />
+                </div>
+                
+                <div className="filtro-grupo">
+                  <label>Fecha Fin:</label>
+                  <input
+                    type="date"
+                    value={fechaFin}
+                    onChange={(e) => setFechaFin(e.target.value)}
+                  />
+                </div>
+              </div>
             )}
           </div>
           
