@@ -34,7 +34,6 @@ const StudentDashboard = () => {
             
             {/* Mostrar el ranking y contenido siempre */}
             <div className="dashboard-content" style={{ display: showGame ? "none" : "block" }}>
-                <p>Contenido específico para estudiantes aquí...</p>
                 <StudentRanking />
             </div>
             
