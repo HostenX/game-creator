@@ -648,7 +648,12 @@ const ResultadosTable = () => {
             x: resultado.tiempoSegundos,
             y: resultado.puntaje,
             nombre: resultado.nombreCompleto || "N/A",
+            curso: resultado.curso || "N/A",
+            puntaje: resultado.puntaje || 0,
             tiempo: formatUtils.tiempo(resultado.tiempoSegundos),
+            puntosBase: resultado.puntosBase || 0,
+            penalidadPuntos: resultado.penalidadPuntos || 0,
+            fecha: resultado.fecha || formatUtils.fecha(resultado.fechaResultado),
             tipo: 'dato'
           }));
       
@@ -679,15 +684,16 @@ const ResultadosTable = () => {
       
           if (!coefs) return { puntos: puntosScatter, curva: [] };
       
-          const minX = Math.min(...datos.map(p => p[0]));
-          const maxX = Math.max(...datos.map(p => p[0]));
           const pasos = 100;
+          const minX = 5;
+          const maxX = 120;
           const paso = (maxX - minX) / pasos;
       
           const puntosCurva = [];
           for (let i = 0; i <= pasos; i++) {
             const x = minX + i * paso;
-            const y = coefs.a * x * x + coefs.b * x + coefs.c;
+            let y = coefs.a * x * x + coefs.b * x + coefs.c;
+            y = Math.max(0, Math.min(y, 200));
             puntosCurva.push({ x, y, tipo: 'curva' });
           }
       
@@ -773,6 +779,7 @@ const ResultadosTable = () => {
           </>
         );
       }
+      
       
 
       default:
