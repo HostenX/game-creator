@@ -622,7 +622,7 @@ const ResultadosTable = () => {
       // Vamos a reemplazar el caso 'distribucion' dentro del switch
       case "distribucion": {
         // Adaptado para usar un solo color de puntos y mejor cálculo de curva de tendencia
-        const obtenerDatosGrafico = () => {
+            const obtenerDatosGrafico = () => {
           if (!resultados?.length || !minijuegoSeleccionado) return { puntos: [], curva: [] };
           let datosFiltrados = resultados.filter(resultado =>
             (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado
@@ -759,6 +759,10 @@ const ResultadosTable = () => {
           // Generar puntos para la curva, desnormalizando los valores
           const pasos = 100; // Más puntos para una curva más suave
           const puntosCurva = [];
+      
+          // Calcular los valores mínimos y máximos para el eje Y
+          const minY = Math.min(...vectorY);
+          const maxY = Math.max(...vectorY);
           
           for (let i = 0; i <= pasos; i++) {
             const xNorm = i / pasos;
@@ -770,6 +774,10 @@ const ResultadosTable = () => {
             
             // Desnormalizar X para obtener el valor original
             const x = xNorm * rangoX + minX;
+            
+            // Limitar el valor de Y al rango de los datos originales
+            // para evitar valores extremos en la curva
+            y = Math.max(Math.min(y, maxY * 1.1), minY * 0.9);
             
             puntosCurva.push({ x, y, tipo: 'curva' });
           }
@@ -813,7 +821,8 @@ const ResultadosTable = () => {
                       name="Tiempo (segundos)"
                       stroke="#fff"
                       label={{ value: 'Tiempo (segundos)', position: 'insideBottom', offset: -5, fill: '#fff' }}
-                      domain={['dataMin', 'dataMax']}
+                      domain={['auto', 'auto']}
+                      allowDataOverflow={false}
                     />
                     <YAxis
                       type="number"
@@ -821,7 +830,9 @@ const ResultadosTable = () => {
                       name="Puntaje"
                       stroke="#fff"
                       label={{ value: 'Puntaje', angle: -90, position: 'insideLeft', offset: 10, fill: '#fff' }}
-                      domain={['dataMin', 'dataMax']}
+                      domain={['auto', 'auto']}
+                      allowDataOverflow={false}
+                      padding={{ top: 20, bottom: 20 }}
                     />
                     <Tooltip content={<CustomTooltip />} />
       
@@ -838,7 +849,7 @@ const ResultadosTable = () => {
                       <Scatter
                         name="Tendencia"
                         data={curva}
-                        line={{ stroke: '#FFA726', strokeWidth: 2 }} // Línea continua naranja
+                        line={{ stroke: '#FFA726', strokeWidth: 2 }}
                         shape={() => null}
                         legendType="line"
                       />
