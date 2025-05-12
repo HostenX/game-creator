@@ -621,137 +621,85 @@ const ResultadosTable = () => {
 
       // Vamos a reemplazar el caso 'distribucion' dentro del switch
       case "distribucion": {
-        // Adaptado del script de Python TestChart.py para React
+        // Adaptado para usar un solo color de puntos y línea de tendencia curva, sin leyenda
         const obtenerDatosGrafico = () => {
           if (!resultados?.length || !minijuegoSeleccionado) return { puntos: [], curva: [] };
-          
-          // Filtrar por minijuego seleccionado
-          let datosFiltrados = resultados.filter(resultado => 
+          let datosFiltrados = resultados.filter(resultado =>
             (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado
           );
-          
-          // Filtrar por fechas si están disponibles
           if (fechaInicio && fechaFin) {
             const fechaInicioObj = new Date(fechaInicio);
             const fechaFinObj = new Date(fechaFin);
             fechaFinObj.setHours(23, 59, 59);
-            
             datosFiltrados = datosFiltrados.filter(resultado => {
               const fechaResultado = new Date(resultado.fecha || resultado.fechaResultado);
               return fechaResultado >= fechaInicioObj && fechaResultado <= fechaFinObj;
             });
           }
-          
           if (!datosFiltrados.length) return { puntos: [], curva: [] };
-          
-          // IMPORTANTE: Invertimos los ejes para que coincida con el script de Python
-          // En Python: X=Tiempo, Y=Puntaje (esto es lo que necesitamos)
+      
           const puntosScatter = datosFiltrados.map(resultado => ({
-            x: parseFloat(resultado.tiempoSegundos) || 0,  // Tiempo en X - aseguramos que es numérico
-            y: parseFloat(resultado.puntaje) || 0,         // Puntaje en Y - aseguramos que es numérico
+            x: resultado.tiempoSegundos || 0,
+            y: resultado.puntaje || 0,
             nombre: resultado.nombreCompleto || "N/A",
-            curso: resultado.curso || "N/A",
-            puntaje: resultado.puntaje || 0,
             tiempo: formatUtils.tiempo(resultado.tiempoSegundos),
-            puntosBase: resultado.puntosBase || 0,
-            penalidadPuntos: resultado.penalidadPuntos || 0,
-            fecha: resultado.fecha || formatUtils.fecha(resultado.fechaResultado),
             tipo: 'dato'
           }));
-          
-          // Generar puntos para la línea de tendencia curva (orden=2 para parábola como en Python)
+      
           if (puntosScatter.length < 3) return { puntos: puntosScatter, curva: [] };
-          
-          try {
-            // Preparar datos para regresión polinomial de grado 2 (y = ax² + bx + c)
-            const datos = puntosScatter.map(d => [d.x, d.y]);
-            
-            // Calcular coeficientes para regresión polinomial de orden 2
-            const calcularRegresionPolinomial = (puntos) => {
-              const n = puntos.length;
-              
-              // Inicializar sumas
-              let sumX = 0, sumY = 0;
-              let sumX2 = 0, sumX3 = 0, sumX4 = 0;
-              let sumXY = 0, sumX2Y = 0;
-              
-              // Calcular sumas necesarias para el sistema de ecuaciones
-              puntos.forEach(([x, y]) => {
-                const x2 = x * x;
-                sumX += x;
-                sumX2 += x2;
-                sumX3 += x2 * x;
-                sumX4 += x2 * x2;
-                sumY += y;
-                sumXY += x * y;
-                sumX2Y += x2 * y;
-              });
-              // Determinante de la matriz
-              const det = n*(sumX2*sumX4 - sumX3*sumX3) - 
-                        sumX*(sumX*sumX4 - sumX3*sumX2) + 
+      
+          const datos = puntosScatter.map(d => [d.x, d.y]);
+          // Regresión polinomial de orden 2
+          const coefs = (() => {
+            const n = datos.length;
+            let sumX = 0, sumY = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0, sumXY = 0, sumX2Y = 0;
+            datos.forEach(([x, y]) => {
+              const x2 = x * x;
+              sumX += x;
+              sumX2 += x2;
+              sumX3 += x2 * x;
+              sumX4 += x2 * x2;
+              sumY += y;
+              sumXY += x * y;
+              sumX2Y += x2 * y;
+            });
+            const det = n*(sumX2*sumX4 - sumX3*sumX3) -
+                        sumX*(sumX*sumX4 - sumX3*sumX2) +
                         sumX2*(sumX*sumX3 - sumX2*sumX2);
-              
-              if (Math.abs(det) < 1e-10) return null;  // Matriz singular
-              
-              // Calcular coeficientes usando la regla de Cramer
-              const detA = sumY*(sumX2*sumX4 - sumX3*sumX3) - 
-                          sumX*(sumXY*sumX4 - sumX3*sumX2Y) + 
-                          sumX2*(sumXY*sumX3 - sumX2*sumX2Y);
-                          
-              const detB = n*(sumXY*sumX4 - sumX3*sumX2Y) - 
-                          sumY*(sumX*sumX4 - sumX3*sumX2) + 
-                          sumX2*(sumX*sumX2Y - sumXY*sumX2);
-                          
-              const detC = n*(sumX2*sumX2Y - sumXY*sumX3) - 
-                          sumX*(sumX*sumX2Y - sumXY*sumX2) + 
-                          sumY*(sumX*sumX3 - sumX2*sumX2);
-              
-              const a = detA / det;
-              const b = detB / det;
-              const c = detC / det;
-              
-              return { a, b, c };  // y = ax² + bx + c
-            };
-            
-            // Calcular coeficientes
-            const coefs = calcularRegresionPolinomial(datos);
-            
-            if (!coefs) return { puntos: puntosScatter, curva: [] };
-            
-            // Generar puntos para la curva de tendencia
-            const minX = Math.min(...datos.map(p => p[0]));
-            const maxX = Math.max(...datos.map(p => p[0]));
-            
-            // Usar al menos 50 puntos para que la curva sea suave
-            const pasos = 50;
-            const paso = (maxX - minX) / pasos;
-            
-            const puntosCurva = [];
-            for (let i = 0; i <= pasos; i++) {
-              const x = minX + i * paso;
-              const y = coefs.a * x * x + coefs.b * x + coefs.c;
-              puntosCurva.push({ x, y, tipo: 'curva' });
-            }
-            
-            return { puntos: puntosScatter, curva: puntosCurva };
-          } catch (error) {
-            console.error("Error calculando la regresión polinomial:", error);
-            return { puntos: puntosScatter, curva: [] };
+            if (Math.abs(det) < 1e-10) return null;
+            const detA = sumY*(sumX2*sumX4 - sumX3*sumX3) -
+                        sumX*(sumXY*sumX4 - sumX3*sumX2Y) +
+                        sumX2*(sumXY*sumX3 - sumX2*sumX2Y);
+            const detB = n*(sumXY*sumX4 - sumX3*sumX2Y) -
+                        sumY*(sumX*sumX4 - sumX3*sumX2) +
+                        sumX2*(sumX*sumX2Y - sumXY*sumX2);
+            const detC = n*(sumX2*sumX2Y - sumXY*sumX3) -
+                        sumX*(sumX*sumX2Y - sumXY*sumX2) +
+                        sumY*(sumX*sumX3 - sumX2*sumX2);
+            return { a: detA/det, b: detB/det, c: detC/det };
+          })();
+      
+          if (!coefs) return { puntos: puntosScatter, curva: [] };
+      
+          const minX = Math.min(...datos.map(p => p[0]));
+          const maxX = Math.max(...datos.map(p => p[0]));
+          const pasos = 50;
+          const paso = (maxX - minX) / pasos;
+          const puntosCurva = [];
+          for (let i = 0; i <= pasos; i++) {
+            const x = minX + i * paso;
+            const y = coefs.a * x * x + coefs.b * x + coefs.c;
+            puntosCurva.push({ x, y, tipo: 'curva' });
           }
+      
+          return { puntos: puntosScatter, curva: puntosCurva };
         };
-        
+      
         const { puntos, curva } = obtenerDatosGrafico();
-        
-        // Calcular máximos para definir límites en los ejes
-        const maxY = Math.max(...puntos.map(p => p.y), ...curva.map(p => p.y)) * 1.1; // 10% más para margen
-        const maxX = Math.max(...puntos.map(p => p.x), ...curva.map(p => p.x)) * 1.1;
-        
-        // Agrupar todos los puntos en un solo conjunto para simplificar
-        const todosLosPuntos = puntos.map(p => ({ ...p, fill: '#1f77b4' })); // Color unificado
-        
+      
         return (
           <>
-            <FiltrosDistribucion 
+            <FiltrosDistribucion
               minijuegoSeleccionado={minijuegoSeleccionado}
               setMinijuegoSeleccionado={setMinijuegoSeleccionado}
               fechaInicio={fechaInicio}
@@ -760,7 +708,7 @@ const ResultadosTable = () => {
               setFechaFin={setFechaFin}
               miniJuegosDisponibles={miniJuegosDisponibles}
             />
-            
+      
             {!minijuegoSeleccionado ? (
               <div className="aviso-seleccion">
                 <p>Por favor, selecciona un minijuego para visualizar el gráfico.</p>
@@ -773,77 +721,56 @@ const ResultadosTable = () => {
               <div className="grafico-distribucion-wrapper">
                 <h3>Análisis de Puntaje vs Tiempo</h3>
                 <p className="grafico-subtitulo">Minijuego: {minijuegoSeleccionado}</p>
-                
+      
                 <ResponsiveContainer width="100%" height={500}>
                   <ScatterChart margin={{ top: 20, right: 30, bottom: 50, left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis 
-                      type="number" 
-                      dataKey="x" 
-                      name="Tiempo (segundos)" 
+                    <XAxis
+                      type="number"
+                      dataKey="x"
+                      name="Tiempo (segundos)"
                       stroke="#fff"
-                      label={{ 
-                        value: 'Tiempo (segundos)', 
-                        position: 'insideBottom', 
-                        offset: -5, 
-                        fill: '#fff' 
-                      }}
-                      domain={[0, maxX || 'auto']}  // Establecer límite superior
+                      label={{ value: 'Tiempo (segundos)', position: 'insideBottom', offset: -5, fill: '#fff' }}
+                      domain={[ 'auto', 'auto' ]}
                     />
-                    <YAxis 
-                      type="number" 
-                      dataKey="y" 
+                    <YAxis
+                      type="number"
+                      dataKey="y"
                       name="Puntaje"
                       stroke="#fff"
-                      label={{ 
-                        value: 'Puntaje', 
-                        angle: -90, 
-                        position: 'insideLeft', 
-                        offset: 10, 
-                        fill: '#fff' 
-                      }}
-                      domain={[0, maxY || 'auto']} // Establecer límite superior
+                      label={{ value: 'Puntaje', angle: -90, position: 'insideLeft', offset: 10, fill: '#fff' }}
+                      domain={[ 'auto', 'auto' ]}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    
-                    {/* Unificar todos los puntos en un solo Scatter */}
-                    <Scatter 
-                      name="Resultados"
-                      data={todosLosPuntos}
-                      fill="#1f77b4"
+      
+                    {/* Puntos todos del mismo color */}
+                    <Scatter
+                      name="Intentos"
+                      data={puntos}
+                      fill="#00b894"
                       shape="circle"
                     />
-                    
+      
                     {/* Curva de tendencia */}
                     {curva.length > 0 && (
                       <Scatter
-                        name="Línea de tendencia"
+                        name="Tendencia"
                         data={curva}
-                        line={{ stroke: '#ff7f0e', strokeWidth: 2 }}
-                        shape={() => null} // No mostrar puntos para la curva
+                        line={{ stroke: 'black', strokeWidth: 2, strokeDasharray: '5 5' }}
+                        shape={() => null}
                         legendType="line"
                       />
                     )}
-                    
-                    {/* Leyenda simplificada (solo puntos y curva de tendencia) */}
-                    <Legend 
-                      layout="horizontal"
-                      verticalAlign="top"
-                      align="center"
-                      wrapperStyle={{ 
-                        paddingLeft: '10px',
-                        fontSize: '12px', 
-                        color: '#fff'
-                      }}
-                    />
+      
+                    {/* Leyenda eliminada, ya no se renderiza */}
                   </ScatterChart>
                 </ResponsiveContainer>
-                
+      
                 <div className="estadisticas-distribucion">
                   <h4>Estadísticas de {minijuegoSeleccionado}</h4>
-                  <EstadisticasMinijuego 
-                    datos={puntos} 
-                    minijuegoSeleccionado={minijuegoSeleccionado} 
+                  <EstadisticasMinijuego
+                    datos={puntos}
+                    minijuegoSeleccionado={minijuegoSeleccionado}
                   />
                 </div>
               </div>
