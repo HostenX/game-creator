@@ -647,8 +647,8 @@ const ResultadosTable = () => {
           // IMPORTANTE: Invertimos los ejes para que coincida con el script de Python
           // En Python: X=Tiempo, Y=Puntaje (esto es lo que necesitamos)
           const puntosScatter = datosFiltrados.map(resultado => ({
-            x: resultado.tiempoSegundos || 0,  // Tiempo en X
-            y: resultado.puntaje || 0,         // Puntaje en Y
+            x: parseFloat(resultado.tiempoSegundos) || 0,  // Tiempo en X - aseguramos que es numérico
+            y: parseFloat(resultado.puntaje) || 0,         // Puntaje en Y - aseguramos que es numérico
             nombre: resultado.nombreCompleto || "N/A",
             curso: resultado.curso || "N/A",
             puntaje: resultado.puntaje || 0,
@@ -686,12 +686,6 @@ const ResultadosTable = () => {
                 sumXY += x * y;
                 sumX2Y += x2 * y;
               });
-              
-              // Resolver sistema de ecuaciones: 
-              // | n    sumX  sumX2 | | c |   | sumY  |
-              // | sumX  sumX2 sumX3 | | b | = | sumXY |
-              // | sumX2 sumX3 sumX4 | | a |   | sumX2Y|
-              
               // Determinante de la matriz
               const det = n*(sumX2*sumX4 - sumX3*sumX3) - 
                         sumX*(sumX*sumX4 - sumX3*sumX2) + 
@@ -748,14 +742,12 @@ const ResultadosTable = () => {
         
         const { puntos, curva } = obtenerDatosGrafico();
         
-        // Agrupar puntos por estudiante para la leyenda
-        const estudiantesUnicos = [...new Set(puntos.map(p => p.nombre))];
+        // Calcular máximos para definir límites en los ejes
+        const maxY = Math.max(...puntos.map(p => p.y), ...curva.map(p => p.y)) * 1.1; // 10% más para margen
+        const maxX = Math.max(...puntos.map(p => p.x), ...curva.map(p => p.x)) * 1.1;
         
-        // Crear un mapa de colores consistente para cada estudiante
-        const colorMap = {};
-        estudiantesUnicos.forEach((nombre, index) => {
-          colorMap[nombre] = COLORS[index % COLORS.length];
-        });
+        // Agrupar todos los puntos en un solo conjunto para simplificar
+        const todosLosPuntos = puntos.map(p => ({ ...p, fill: '#1f77b4' })); // Color unificado
         
         return (
           <>
@@ -796,7 +788,7 @@ const ResultadosTable = () => {
                         offset: -5, 
                         fill: '#fff' 
                       }}
-                      domain={['auto', 'auto']}
+                      domain={[0, maxX || 'auto']}  // Establecer límite superior
                     />
                     <YAxis 
                       type="number" 
@@ -810,45 +802,38 @@ const ResultadosTable = () => {
                         offset: 10, 
                         fill: '#fff' 
                       }}
-                      domain={['auto', 'auto']}
+                      domain={[0, maxY || 'auto']} // Establecer límite superior
                     />
                     <Tooltip content={<CustomTooltip />} />
                     
-                    {/* Puntos agrupados por estudiante */}
-                    {estudiantesUnicos.map((nombre, index) => {
-                      const puntosEstudiante = puntos.filter(p => p.nombre === nombre);
-                      return (
-                        <Scatter 
-                          key={`student-${index}`}
-                          name={nombre}
-                          data={puntosEstudiante}
-                          fill={colorMap[nombre]}
-                          shape="circle"
-                        />
-                      );
-                    })}
+                    {/* Unificar todos los puntos en un solo Scatter */}
+                    <Scatter 
+                      name="Resultados"
+                      data={todosLosPuntos}
+                      fill="#1f77b4"
+                      shape="circle"
+                    />
                     
                     {/* Curva de tendencia */}
                     {curva.length > 0 && (
                       <Scatter
                         name="Línea de tendencia"
                         data={curva}
-                        line={{ stroke: 'black', strokeWidth: 2, strokeDasharray: '5 5' }}
+                        line={{ stroke: '#ff7f0e', strokeWidth: 2 }}
                         shape={() => null} // No mostrar puntos para la curva
                         legendType="line"
                       />
                     )}
                     
+                    {/* Leyenda simplificada (solo puntos y curva de tendencia) */}
                     <Legend 
-                      layout="vertical"
+                      layout="horizontal"
                       verticalAlign="top"
-                      align="right"
+                      align="center"
                       wrapperStyle={{ 
                         paddingLeft: '10px',
                         fontSize: '12px', 
-                        color: '#fff',
-                        maxHeight: '300px',
-                        overflowY: 'auto'
+                        color: '#fff'
                       }}
                     />
                   </ScatterChart>
