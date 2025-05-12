@@ -621,17 +621,12 @@ const ResultadosTable = () => {
 
       // Vamos a reemplazar el caso 'distribucion' dentro del switch
       case "distribucion": {
+        // Adaptado para usar un solo color de puntos y línea de tendencia curva, sin leyenda
         const obtenerDatosGrafico = () => {
           if (!resultados?.length || !minijuegoSeleccionado) return { puntos: [], curva: [] };
-      
           let datosFiltrados = resultados.filter(resultado =>
-            (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado &&
-            resultado.tiempoSegundos > 0 &&
-            resultado.puntaje > 0 &&
-            typeof resultado.tiempoSegundos === 'number' &&
-            typeof resultado.puntaje === 'number'
+            (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado
           );
-      
           if (fechaInicio && fechaFin) {
             const fechaInicioObj = new Date(fechaInicio);
             const fechaFinObj = new Date(fechaFin);
@@ -641,79 +636,55 @@ const ResultadosTable = () => {
               return fechaResultado >= fechaInicioObj && fechaResultado <= fechaFinObj;
             });
           }
-      
           if (!datosFiltrados.length) return { puntos: [], curva: [] };
       
           const puntosScatter = datosFiltrados.map(resultado => ({
-            x: resultado.tiempoSegundos,
-            y: resultado.puntaje,
+            x: resultado.tiempoSegundos || 0,
+            y: resultado.puntaje || 0,
             nombre: resultado.nombreCompleto || "N/A",
-            curso: resultado.curso || "N/A",
-            puntaje: resultado.puntaje || 0,
             tiempo: formatUtils.tiempo(resultado.tiempoSegundos),
-            puntosBase: resultado.puntosBase || 0,
-            penalidadPuntos: resultado.penalidadPuntos || 0,
-            fecha: resultado.fecha || formatUtils.fecha(resultado.fechaResultado),
             tipo: 'dato'
           }));
       
           if (puntosScatter.length < 3) return { puntos: puntosScatter, curva: [] };
       
-          // Regresión cuadrática usando mínimos cuadrados
-          // Similar al enfoque usado por seaborn regplot con order=2
-          const calcularRegresionCuadratica = (datos) => {
-            // Matrices para el sistema de ecuaciones
+          const datos = puntosScatter.map(d => [d.x, d.y]);
+          // Regresión polinomial de orden 2
+          const coefs = (() => {
             const n = datos.length;
             let sumX = 0, sumY = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0, sumXY = 0, sumX2Y = 0;
-            
-            // Calcular las sumas necesarias
-            datos.forEach(punto => {
-              const x = punto.x;
-              const y = punto.y;
+            datos.forEach(([x, y]) => {
               const x2 = x * x;
-              
               sumX += x;
-              sumY += y;
               sumX2 += x2;
               sumX3 += x2 * x;
               sumX4 += x2 * x2;
+              sumY += y;
               sumXY += x * y;
               sumX2Y += x2 * y;
             });
-            
-            // Resolver el sistema de ecuaciones para y = a*x^2 + b*x + c
-            // Usando la matriz aumentada y el método de Cramer
-            const matrixDet = (sumX4 * (sumX2 * n - sumX * sumX) + 
-                                sumX3 * (sumX * sumX2 - sumX3 * n) + 
-                                sumX2 * (sumX3 * sumX - sumX2 * sumX2));
-            
-            if (Math.abs(matrixDet) < 1e-10) return null; // Matriz singular, no se puede resolver
-            
-            const a = (sumX2Y * (sumX2 * n - sumX * sumX) + 
-                      sumXY * (sumX * sumX2 - sumX3 * n) + 
-                      sumY * (sumX3 * sumX - sumX2 * sumX2)) / matrixDet;
-                      
-            const b = (sumX4 * (sumXY * n - sumY * sumX) + 
-                      sumX3 * (sumY * sumX2 - sumXY * sumX2) + 
-                      sumX2 * (sumX2Y * sumX - sumY * sumX3)) / matrixDet;
-                      
-            const c = (sumX4 * (sumX2 * sumY - sumX * sumXY) + 
-                      sumX3 * (sumX * sumX2Y - sumY * sumX3) + 
-                      sumX2Y * (sumX3 * sumX - sumX2 * sumX2)) / matrixDet;
-            
-            return { a, b, c };
-          };
-          
-          const coefs = calcularRegresionCuadratica(puntosScatter);
-          
+            const det = n*(sumX2*sumX4 - sumX3*sumX3) -
+                        sumX*(sumX*sumX4 - sumX3*sumX2) +
+                        sumX2*(sumX*sumX3 - sumX2*sumX2);
+            if (Math.abs(det) < 1e-10) return null;
+            const detA = sumY*(sumX2*sumX4 - sumX3*sumX3) -
+                        sumX*(sumXY*sumX4 - sumX3*sumX2Y) +
+                        sumX2*(sumXY*sumX3 - sumX2*sumX2Y);
+            const detB = n*(sumXY*sumX4 - sumX3*sumX2Y) -
+                        sumY*(sumX*sumX4 - sumX3*sumX2) +
+                        sumX2*(sumX*sumX2Y - sumXY*sumX2);
+            const detC = n*(sumX2*sumX2Y - sumXY*sumX3) -
+                        sumX*(sumX*sumX2Y - sumXY*sumX2) +
+                        sumY*(sumX*sumX3 - sumX2*sumX2);
+            return { a: detA/det, b: detB/det, c: detC/det };
+          })();
+      
           if (!coefs) return { puntos: puntosScatter, curva: [] };
-          
-          // Calcular puntos para la curva de regresión
-          const minX = Math.min(...puntosScatter.map(p => p.x));
-          const maxX = Math.max(...puntosScatter.map(p => p.x));
-          const pasos = 100;
+      
+          const minX = Math.min(...datos.map(p => p[0]));
+          const maxX = Math.max(...datos.map(p => p[0]));
+          const pasos = 50;
           const paso = (maxX - minX) / pasos;
-          
           const puntosCurva = [];
           for (let i = 0; i <= pasos; i++) {
             const x = minX + i * paso;
@@ -760,7 +731,7 @@ const ResultadosTable = () => {
                       name="Tiempo (segundos)"
                       stroke="#fff"
                       label={{ value: 'Tiempo (segundos)', position: 'insideBottom', offset: -5, fill: '#fff' }}
-                      domain={['auto', 'auto']}
+                      domain={[ 'auto', 'auto' ]}
                     />
                     <YAxis
                       type="number"
@@ -768,10 +739,11 @@ const ResultadosTable = () => {
                       name="Puntaje"
                       stroke="#fff"
                       label={{ value: 'Puntaje', angle: -90, position: 'insideLeft', offset: 10, fill: '#fff' }}
-                      domain={['auto', 'auto']}
+                      domain={[ 'auto', 'auto' ]}
                     />
                     <Tooltip content={<CustomTooltip />} />
       
+                    {/* Puntos todos del mismo color */}
                     <Scatter
                       name="Intentos"
                       data={puntos}
@@ -779,15 +751,18 @@ const ResultadosTable = () => {
                       shape="circle"
                     />
       
+                    {/* Curva de tendencia */}
                     {curva.length > 0 && (
                       <Scatter
                         name="Tendencia"
                         data={curva}
-                        line={{ stroke: '#000', strokeWidth: 2, strokeDasharray: '5 5' }}
+                        line={{ stroke: 'black', strokeWidth: 2, strokeDasharray: '5 5' }}
                         shape={() => null}
                         legendType="line"
                       />
                     )}
+      
+                    {/* Leyenda eliminada, ya no se renderiza */}
                   </ScatterChart>
                 </ResponsiveContainer>
       
@@ -803,9 +778,6 @@ const ResultadosTable = () => {
           </>
         );
       }
-      
-      
-      
 
       default:
         return null;
