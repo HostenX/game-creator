@@ -600,7 +600,7 @@ const ResultadosTable = () => {
                 label={({ name, percent }) =>
                   `${name}: ${(percent * 100).toFixed(0)}%`
                 }
-                outerRadius={80}
+                outerRadius={160}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -621,12 +621,17 @@ const ResultadosTable = () => {
 
       // Vamos a reemplazar el caso 'distribucion' dentro del switch
       case "distribucion": {
-        // Adaptado para usar un solo color de puntos y línea de tendencia curva, sin leyenda
         const obtenerDatosGrafico = () => {
           if (!resultados?.length || !minijuegoSeleccionado) return { puntos: [], curva: [] };
+      
           let datosFiltrados = resultados.filter(resultado =>
-            (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado
+            (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado &&
+            resultado.tiempoSegundos > 0 &&
+            resultado.puntaje > 0 &&
+            typeof resultado.tiempoSegundos === 'number' &&
+            typeof resultado.puntaje === 'number'
           );
+      
           if (fechaInicio && fechaFin) {
             const fechaInicioObj = new Date(fechaInicio);
             const fechaFinObj = new Date(fechaFin);
@@ -636,11 +641,12 @@ const ResultadosTable = () => {
               return fechaResultado >= fechaInicioObj && fechaResultado <= fechaFinObj;
             });
           }
+      
           if (!datosFiltrados.length) return { puntos: [], curva: [] };
       
           const puntosScatter = datosFiltrados.map(resultado => ({
-            x: resultado.tiempoSegundos || 0,
-            y: resultado.puntaje || 0,
+            x: resultado.tiempoSegundos,
+            y: resultado.puntaje,
             nombre: resultado.nombreCompleto || "N/A",
             tiempo: formatUtils.tiempo(resultado.tiempoSegundos),
             tipo: 'dato'
@@ -649,7 +655,7 @@ const ResultadosTable = () => {
           if (puntosScatter.length < 3) return { puntos: puntosScatter, curva: [] };
       
           const datos = puntosScatter.map(d => [d.x, d.y]);
-          // Regresión polinomial de orden 2
+      
           const coefs = (() => {
             const n = datos.length;
             let sumX = 0, sumY = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0, sumXY = 0, sumX2Y = 0;
@@ -663,19 +669,11 @@ const ResultadosTable = () => {
               sumXY += x * y;
               sumX2Y += x2 * y;
             });
-            const det = n*(sumX2*sumX4 - sumX3*sumX3) -
-                        sumX*(sumX*sumX4 - sumX3*sumX2) +
-                        sumX2*(sumX*sumX3 - sumX2*sumX2);
+            const det = n*(sumX2*sumX4 - sumX3*sumX3) - sumX*(sumX*sumX4 - sumX3*sumX2) + sumX2*(sumX*sumX3 - sumX2*sumX2);
             if (Math.abs(det) < 1e-10) return null;
-            const detA = sumY*(sumX2*sumX4 - sumX3*sumX3) -
-                        sumX*(sumXY*sumX4 - sumX3*sumX2Y) +
-                        sumX2*(sumXY*sumX3 - sumX2*sumX2Y);
-            const detB = n*(sumXY*sumX4 - sumX3*sumX2Y) -
-                        sumY*(sumX*sumX4 - sumX3*sumX2) +
-                        sumX2*(sumX*sumX2Y - sumXY*sumX2);
-            const detC = n*(sumX2*sumX2Y - sumXY*sumX3) -
-                        sumX*(sumX*sumX2Y - sumXY*sumX2) +
-                        sumY*(sumX*sumX3 - sumX2*sumX2);
+            const detA = sumY*(sumX2*sumX4 - sumX3*sumX3) - sumX*(sumXY*sumX4 - sumX3*sumX2Y) + sumX2*(sumXY*sumX3 - sumX2*sumX2Y);
+            const detB = n*(sumXY*sumX4 - sumX3*sumX2Y) - sumY*(sumX*sumX4 - sumX3*sumX2) + sumX2*(sumX*sumX2Y - sumXY*sumX2);
+            const detC = n*(sumX2*sumX2Y - sumXY*sumX3) - sumX*(sumX*sumX2Y - sumXY*sumX2) + sumY*(sumX*sumX3 - sumX2*sumX2);
             return { a: detA/det, b: detB/det, c: detC/det };
           })();
       
@@ -683,8 +681,9 @@ const ResultadosTable = () => {
       
           const minX = Math.min(...datos.map(p => p[0]));
           const maxX = Math.max(...datos.map(p => p[0]));
-          const pasos = 50;
+          const pasos = 100;
           const paso = (maxX - minX) / pasos;
+      
           const puntosCurva = [];
           for (let i = 0; i <= pasos; i++) {
             const x = minX + i * paso;
@@ -743,7 +742,6 @@ const ResultadosTable = () => {
                     />
                     <Tooltip content={<CustomTooltip />} />
       
-                    {/* Puntos todos del mismo color */}
                     <Scatter
                       name="Intentos"
                       data={puntos}
@@ -751,7 +749,6 @@ const ResultadosTable = () => {
                       shape="circle"
                     />
       
-                    {/* Curva de tendencia */}
                     {curva.length > 0 && (
                       <Scatter
                         name="Tendencia"
@@ -761,8 +758,6 @@ const ResultadosTable = () => {
                         legendType="line"
                       />
                     )}
-      
-                    {/* Leyenda eliminada, ya no se renderiza */}
                   </ScatterChart>
                 </ResponsiveContainer>
       
@@ -778,6 +773,7 @@ const ResultadosTable = () => {
           </>
         );
       }
+      
 
       default:
         return null;
