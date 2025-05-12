@@ -621,7 +621,7 @@ const ResultadosTable = () => {
 
       // Vamos a reemplazar el caso 'distribucion' dentro del switch
       case "distribucion": {
-        // Adaptado para usar un solo color de puntos y línea de tendencia curva, sin leyenda
+        // Adaptado para usar un solo color de puntos y mejor cálculo de curva de tendencia
         const obtenerDatosGrafico = () => {
           if (!resultados?.length || !minijuegoSeleccionado) return { puntos: [], curva: [] };
           let datosFiltrados = resultados.filter(resultado =>
@@ -648,50 +648,132 @@ const ResultadosTable = () => {
       
           if (puntosScatter.length < 3) return { puntos: puntosScatter, curva: [] };
       
-          const datos = puntosScatter.map(d => [d.x, d.y]);
-          // Regresión polinomial de orden 2
-          const coefs = (() => {
+          // Extraer vectores X e Y para cálculos
+          const vectorX = puntosScatter.map(d => d.x);
+          const vectorY = puntosScatter.map(d => d.y);
+      
+          // Normalizar datos para evitar problemas numéricos
+          const minX = Math.min(...vectorX);
+          const maxX = Math.max(...vectorX);
+          const rangoX = maxX - minX;
+          
+          // Si el rango es muy pequeño, evitamos la división por cero
+          if (rangoX < 0.00001) return { puntos: puntosScatter, curva: [] };
+      
+          // Función para normalizar X
+          const normalizar = x => (x - minX) / rangoX;
+          
+          // Datos normalizados
+          const datosNormalizados = puntosScatter.map(p => [normalizar(p.x), p.y]);
+          
+          // Función para calcular regresión polinomial con mejor control numérico
+          const calcularRegresion = (datos, grado = 2) => {
             const n = datos.length;
-            let sumX = 0, sumY = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0, sumXY = 0, sumX2Y = 0;
-            datos.forEach(([x, y]) => {
-              const x2 = x * x;
-              sumX += x;
-              sumX2 += x2;
-              sumX3 += x2 * x;
-              sumX4 += x2 * x2;
-              sumY += y;
-              sumXY += x * y;
-              sumX2Y += x2 * y;
-            });
-            const det = n*(sumX2*sumX4 - sumX3*sumX3) -
-                        sumX*(sumX*sumX4 - sumX3*sumX2) +
-                        sumX2*(sumX*sumX3 - sumX2*sumX2);
-            if (Math.abs(det) < 1e-10) return null;
-            const detA = sumY*(sumX2*sumX4 - sumX3*sumX3) -
-                        sumX*(sumXY*sumX4 - sumX3*sumX2Y) +
-                        sumX2*(sumXY*sumX3 - sumX2*sumX2Y);
-            const detB = n*(sumXY*sumX4 - sumX3*sumX2Y) -
-                        sumY*(sumX*sumX4 - sumX3*sumX2) +
-                        sumX2*(sumX*sumX2Y - sumXY*sumX2);
-            const detC = n*(sumX2*sumX2Y - sumXY*sumX3) -
-                        sumX*(sumX*sumX2Y - sumXY*sumX2) +
-                        sumY*(sumX*sumX3 - sumX2*sumX2);
-            return { a: detA/det, b: detB/det, c: detC/det };
-          })();
-      
-          if (!coefs) return { puntos: puntosScatter, curva: [] };
-      
-          const minX = Math.min(...datos.map(p => p[0]));
-          const maxX = Math.max(...datos.map(p => p[0]));
-          const pasos = 50;
-          const paso = (maxX - minX) / pasos;
+            if (n <= grado) return null; // No suficientes puntos para el grado deseado
+            
+            // Crear la matriz X para regresión polinomial
+            const X = [];
+            for (let i = 0; i < n; i++) {
+              const fila = [];
+              const x = datos[i][0];
+              for (let j = 0; j <= grado; j++) {
+                fila.push(Math.pow(x, j));
+              }
+              X.push(fila);
+            }
+            
+            // Vector Y
+            const Y = datos.map(d => d[1]);
+            
+            // Calcular X^T * X
+            const XtX = Array(grado + 1).fill().map(() => Array(grado + 1).fill(0));
+            for (let i = 0; i <= grado; i++) {
+              for (let j = 0; j <= grado; j++) {
+                for (let k = 0; k < n; k++) {
+                  XtX[i][j] += X[k][i] * X[k][j];
+                }
+              }
+            }
+            
+            // Calcular X^T * Y
+            const XtY = Array(grado + 1).fill(0);
+            for (let i = 0; i <= grado; i++) {
+              for (let k = 0; k < n; k++) {
+                XtY[i] += X[k][i] * Y[k];
+              }
+            }
+            
+            // Resolver sistema de ecuaciones mediante eliminación de Gauss-Jordan
+            const matriz = [];
+            for (let i = 0; i <= grado; i++) {
+              const fila = [...XtX[i], XtY[i]];
+              matriz.push(fila);
+            }
+            
+            // Gauss-Jordan
+            for (let i = 0; i <= grado; i++) {
+              // Pivoteo parcial
+              let maxRow = i;
+              for (let j = i + 1; j <= grado; j++) {
+                if (Math.abs(matriz[j][i]) > Math.abs(matriz[maxRow][i])) {
+                  maxRow = j;
+                }
+              }
+              
+              if (maxRow !== i) {
+                [matriz[i], matriz[maxRow]] = [matriz[maxRow], matriz[i]];
+              }
+              
+              // Si el pivote es muy pequeño, consideramos que la matriz es singular
+              if (Math.abs(matriz[i][i]) < 1e-10) {
+                return null;
+              }
+              
+              // Normalizar fila por el pivote
+              const pivote = matriz[i][i];
+              for (let j = i; j <= grado + 1; j++) {
+                matriz[i][j] /= pivote;
+              }
+              
+              // Eliminación
+              for (let j = 0; j <= grado; j++) {
+                if (j !== i) {
+                  const factor = matriz[j][i];
+                  for (let k = i; k <= grado + 1; k++) {
+                    matriz[j][k] -= factor * matriz[i][k];
+                  }
+                }
+              }
+            }
+            
+            // Extraer solución
+            const coeficientes = matriz.map(fila => fila[grado + 1]);
+            return coeficientes;
+          };
+          
+          // Calcular coeficientes con datos normalizados
+          const coeficientes = calcularRegresion(datosNormalizados, 2);
+          
+          if (!coeficientes) return { puntos: puntosScatter, curva: [] };
+          
+          // Generar puntos para la curva, desnormalizando los valores
+          const pasos = 100; // Más puntos para una curva más suave
           const puntosCurva = [];
+          
           for (let i = 0; i <= pasos; i++) {
-            const x = minX + i * paso;
-            const y = coefs.a * x * x + coefs.b * x + coefs.c;
+            const xNorm = i / pasos;
+            // Calcular Y usando el polinomio
+            let y = 0;
+            for (let j = 0; j < coeficientes.length; j++) {
+              y += coeficientes[j] * Math.pow(xNorm, j);
+            }
+            
+            // Desnormalizar X para obtener el valor original
+            const x = xNorm * rangoX + minX;
+            
             puntosCurva.push({ x, y, tipo: 'curva' });
           }
-      
+          
           return { puntos: puntosScatter, curva: puntosCurva };
         };
       
@@ -731,7 +813,7 @@ const ResultadosTable = () => {
                       name="Tiempo (segundos)"
                       stroke="#fff"
                       label={{ value: 'Tiempo (segundos)', position: 'insideBottom', offset: -5, fill: '#fff' }}
-                      domain={[ 'auto', 'auto' ]}
+                      domain={['dataMin', 'dataMax']}
                     />
                     <YAxis
                       type="number"
@@ -739,7 +821,7 @@ const ResultadosTable = () => {
                       name="Puntaje"
                       stroke="#fff"
                       label={{ value: 'Puntaje', angle: -90, position: 'insideLeft', offset: 10, fill: '#fff' }}
-                      domain={[ 'auto', 'auto' ]}
+                      domain={['dataMin', 'dataMax']}
                     />
                     <Tooltip content={<CustomTooltip />} />
       
@@ -756,13 +838,11 @@ const ResultadosTable = () => {
                       <Scatter
                         name="Tendencia"
                         data={curva}
-                        line={{ stroke: 'black', strokeWidth: 2, strokeDasharray: '5 5' }}
+                        line={{ stroke: '#FFA726', strokeWidth: 2 }} // Línea continua naranja
                         shape={() => null}
                         legendType="line"
                       />
                     )}
-      
-                    {/* Leyenda eliminada, ya no se renderiza */}
                   </ScatterChart>
                 </ResponsiveContainer>
       
