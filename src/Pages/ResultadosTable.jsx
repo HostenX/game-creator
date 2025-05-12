@@ -684,16 +684,15 @@ const ResultadosTable = () => {
       
           if (!coefs) return { puntos: puntosScatter, curva: [] };
       
+          const minX = Math.min(...datos.map(p => p[0]));
+          const maxX = Math.max(...datos.map(p => p[0]));
           const pasos = 100;
-          const minX = 5;
-          const maxX = 120;
           const paso = (maxX - minX) / pasos;
       
           const puntosCurva = [];
           for (let i = 0; i <= pasos; i++) {
             const x = minX + i * paso;
-            let y = coefs.a * x * x + coefs.b * x + coefs.c;
-            y = Math.max(0, Math.min(y, 200));
+            const y = coefs.a * x * x + coefs.b * x + coefs.c;
             puntosCurva.push({ x, y, tipo: 'curva' });
           }
       
@@ -779,6 +778,7 @@ const ResultadosTable = () => {
           </>
         );
       }
+      
       
       
 
