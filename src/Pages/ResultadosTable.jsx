@@ -619,159 +619,147 @@ const ResultadosTable = () => {
           </ResponsiveContainer>
         );
 
+      // Vamos a reemplazar el caso 'distribucion' dentro del switch
       case "distribucion": {
-        // Modificamos procesarDatos.distribucion para adaptarlo al nuevo formato
+        // Adaptado del script de Python TestChart.py para React
         const obtenerDatosGrafico = () => {
-          if (!resultados?.length || !minijuegoSeleccionado) return [];
-
+          if (!resultados?.length || !minijuegoSeleccionado) return { puntos: [], curva: [] };
+          
           // Filtrar por minijuego seleccionado
-          let datosFiltrados = resultados.filter(
-            (resultado) =>
-              (resultado.tituloMinijuego ||
-                resultado.minijuego ||
-                "Sin nombre") === minijuegoSeleccionado
+          let datosFiltrados = resultados.filter(resultado => 
+            (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado
           );
-
+          
           // Filtrar por fechas si están disponibles
           if (fechaInicio && fechaFin) {
             const fechaInicioObj = new Date(fechaInicio);
             const fechaFinObj = new Date(fechaFin);
             fechaFinObj.setHours(23, 59, 59);
-
-            datosFiltrados = datosFiltrados.filter((resultado) => {
-              const fechaResultado = new Date(
-                resultado.fecha || resultado.fechaResultado
-              );
-              return (
-                fechaResultado >= fechaInicioObj &&
-                fechaResultado <= fechaFinObj
-              );
+            
+            datosFiltrados = datosFiltrados.filter(resultado => {
+              const fechaResultado = new Date(resultado.fecha || resultado.fechaResultado);
+              return fechaResultado >= fechaInicioObj && fechaResultado <= fechaFinObj;
             });
           }
-
-          if (!datosFiltrados.length) return [];
-
-          // Preparar datos para el gráfico de dispersión
-          const datosScatter = datosFiltrados.map((resultado) => ({
-            // Intercambiamos x e y para que coincida con el formato del gráfico de Python
-            x: resultado.tiempoSegundos || 0,
-            y: resultado.puntaje || 0,
+          
+          if (!datosFiltrados.length) return { puntos: [], curva: [] };
+          
+          // IMPORTANTE: Invertimos los ejes para que coincida con el script de Python
+          // En Python: X=Tiempo, Y=Puntaje (esto es lo que necesitamos)
+          const puntosScatter = datosFiltrados.map(resultado => ({
+            x: resultado.tiempoSegundos || 0,  // Tiempo en X
+            y: resultado.puntaje || 0,         // Puntaje en Y
             nombre: resultado.nombreCompleto || "N/A",
             curso: resultado.curso || "N/A",
             puntaje: resultado.puntaje || 0,
             tiempo: formatUtils.tiempo(resultado.tiempoSegundos),
-            fecha:
-              resultado.fecha || formatUtils.fecha(resultado.fechaResultado),
-            ...resultado,
+            puntosBase: resultado.puntosBase || 0,
+            penalidadPuntos: resultado.penalidadPuntos || 0,
+            fecha: resultado.fecha || formatUtils.fecha(resultado.fechaResultado),
+            tipo: 'dato'
           }));
-
-          // Generar puntos para la línea de tendencia curva (regresión polinomial)
-          if (datosScatter.length < 2) return datosScatter;
-
-          // Preparar datos para regresión
-          const puntos = datosScatter.map((d) => [d.x, d.y]);
-
-          // Implementar regresión polinomial simple de grado 2
-          const calcularRegresionPolinomial = (puntos, grado = 2) => {
-            // Matrices para resolver el sistema de ecuaciones
-            const n = puntos.length;
-            if (n < 3) return null; // Necesitamos al menos 3 puntos para una curva de grado 2
-
-            try {
-              // Calcular sumas para el sistema de ecuaciones
-              let sumX = 0,
-                sumX2 = 0,
-                sumX3 = 0,
-                sumX4 = 0,
-                sumY = 0,
-                sumXY = 0,
-                sumX2Y = 0;
-
+          
+          // Generar puntos para la línea de tendencia curva (orden=2 para parábola como en Python)
+          if (puntosScatter.length < 3) return { puntos: puntosScatter, curva: [] };
+          
+          try {
+            // Preparar datos para regresión polinomial de grado 2 (y = ax² + bx + c)
+            const datos = puntosScatter.map(d => [d.x, d.y]);
+            
+            // Calcular coeficientes para regresión polinomial de orden 2
+            const calcularRegresionPolinomial = (puntos) => {
+              const n = puntos.length;
+              
+              // Inicializar sumas
+              let sumX = 0, sumY = 0;
+              let sumX2 = 0, sumX3 = 0, sumX4 = 0;
+              let sumXY = 0, sumX2Y = 0;
+              
+              // Calcular sumas necesarias para el sistema de ecuaciones
               puntos.forEach(([x, y]) => {
                 const x2 = x * x;
-                const x3 = x2 * x;
-                const x4 = x3 * x;
-
                 sumX += x;
                 sumX2 += x2;
-                sumX3 += x3;
-                sumX4 += x4;
+                sumX3 += x2 * x;
+                sumX4 += x2 * x2;
                 sumY += y;
                 sumXY += x * y;
                 sumX2Y += x2 * y;
               });
-
-              // Sistema de ecuaciones para encontrar coeficientes a, b, c en y = ax² + bx + c
-              const determinante =
-                n * sumX2 * sumX4 +
-                sumX * sumX3 * sumX2 +
-                sumX2 * sumX * sumX3 -
-                sumX2 * sumX2 * sumX2 -
-                sumX * sumX * sumX4 -
-                n * sumX3 * sumX3;
-
-              if (Math.abs(determinante) < 1e-10) return null; // Sistema singular
-
-              const a =
-                (n * sumX2 * sumX2Y +
-                  sumX * sumXY * sumX2 +
-                  sumY * sumX * sumX3 -
-                  sumY * sumX2 * sumX2 -
-                  n * sumX3 * sumXY -
-                  sumX * sumX * sumX2Y) /
-                determinante;
-
-              const b =
-                (n * sumXY * sumX4 +
-                  sumY * sumX3 * sumX2 +
-                  sumX2 * sumX * sumX2Y -
-                  sumX2 * sumXY * sumX2 -
-                  sumY * sumX * sumX4 -
-                  n * sumX2Y * sumX3) /
-                determinante;
-
-              const c =
-                (sumY * sumX2 * sumX4 +
-                  sumX * sumX3 * sumXY +
-                  sumX2 * sumX2Y * sumX3 -
-                  sumX2 * sumX2 * sumXY -
-                  sumX * sumY * sumX4 -
-                  sumX2Y * sumX3 * sumX2) /
-                determinante;
-
-              return [a, b, c]; // y = ax² + bx + c
-            } catch (error) {
-              console.error("Error en el cálculo de regresión:", error);
-              return null;
+              
+              // Resolver sistema de ecuaciones: 
+              // | n    sumX  sumX2 | | c |   | sumY  |
+              // | sumX  sumX2 sumX3 | | b | = | sumXY |
+              // | sumX2 sumX3 sumX4 | | a |   | sumX2Y|
+              
+              // Determinante de la matriz
+              const det = n*(sumX2*sumX4 - sumX3*sumX3) - 
+                        sumX*(sumX*sumX4 - sumX3*sumX2) + 
+                        sumX2*(sumX*sumX3 - sumX2*sumX2);
+              
+              if (Math.abs(det) < 1e-10) return null;  // Matriz singular
+              
+              // Calcular coeficientes usando la regla de Cramer
+              const detA = sumY*(sumX2*sumX4 - sumX3*sumX3) - 
+                          sumX*(sumXY*sumX4 - sumX3*sumX2Y) + 
+                          sumX2*(sumXY*sumX3 - sumX2*sumX2Y);
+                          
+              const detB = n*(sumXY*sumX4 - sumX3*sumX2Y) - 
+                          sumY*(sumX*sumX4 - sumX3*sumX2) + 
+                          sumX2*(sumX*sumX2Y - sumXY*sumX2);
+                          
+              const detC = n*(sumX2*sumX2Y - sumXY*sumX3) - 
+                          sumX*(sumX*sumX2Y - sumXY*sumX2) + 
+                          sumY*(sumX*sumX3 - sumX2*sumX2);
+              
+              const a = detA / det;
+              const b = detB / det;
+              const c = detC / det;
+              
+              return { a, b, c };  // y = ax² + bx + c
+            };
+            
+            // Calcular coeficientes
+            const coefs = calcularRegresionPolinomial(datos);
+            
+            if (!coefs) return { puntos: puntosScatter, curva: [] };
+            
+            // Generar puntos para la curva de tendencia
+            const minX = Math.min(...datos.map(p => p[0]));
+            const maxX = Math.max(...datos.map(p => p[0]));
+            
+            // Usar al menos 50 puntos para que la curva sea suave
+            const pasos = 50;
+            const paso = (maxX - minX) / pasos;
+            
+            const puntosCurva = [];
+            for (let i = 0; i <= pasos; i++) {
+              const x = minX + i * paso;
+              const y = coefs.a * x * x + coefs.b * x + coefs.c;
+              puntosCurva.push({ x, y, tipo: 'curva' });
             }
-          };
-
-          const coeficientes = calcularRegresionPolinomial(puntos);
-
-          if (!coeficientes) return datosScatter;
-
-          // Generar puntos para la curva de tendencia
-          const [a, b, c] = coeficientes;
-          const minX = Math.min(...puntos.map((p) => p[0]));
-          const maxX = Math.max(...puntos.map((p) => p[0]));
-          const paso = (maxX - minX) / 20;
-
-          const puntosCurva = [];
-          for (let x = minX; x <= maxX; x += paso) {
-            const y = a * x * x + b * x + c;
-            puntosCurva.push({ x, y, tipo: "curva" });
+            
+            return { puntos: puntosScatter, curva: puntosCurva };
+          } catch (error) {
+            console.error("Error calculando la regresión polinomial:", error);
+            return { puntos: puntosScatter, curva: [] };
           }
-
-          return [...puntosCurva, ...datosScatter];
         };
-
-        const datosGrafico = obtenerDatosGrafico();
-        const datosScatter = datosGrafico.filter((d) => !d.tipo);
-        const datosCurva = datosGrafico.filter((d) => d.tipo === "curva");
-
+        
+        const { puntos, curva } = obtenerDatosGrafico();
+        
+        // Agrupar puntos por estudiante para la leyenda
+        const estudiantesUnicos = [...new Set(puntos.map(p => p.nombre))];
+        
+        // Crear un mapa de colores consistente para cada estudiante
+        const colorMap = {};
+        estudiantesUnicos.forEach((nombre, index) => {
+          colorMap[nombre] = COLORS[index % COLORS.length];
+        });
+        
         return (
           <>
-            <FiltrosDistribucion
+            <FiltrosDistribucion 
               minijuegoSeleccionado={minijuegoSeleccionado}
               setMinijuegoSeleccionado={setMinijuegoSeleccionado}
               fechaInicio={fechaInicio}
@@ -780,99 +768,97 @@ const ResultadosTable = () => {
               setFechaFin={setFechaFin}
               miniJuegosDisponibles={miniJuegosDisponibles}
             />
-
+            
             {!minijuegoSeleccionado ? (
               <div className="aviso-seleccion">
-                <p>
-                  Por favor, selecciona un minijuego para visualizar el gráfico.
-                </p>
+                <p>Por favor, selecciona un minijuego para visualizar el gráfico.</p>
               </div>
-            ) : datosGrafico.length === 0 ? (
+            ) : puntos.length === 0 ? (
               <div className="no-datos">
-                <p>
-                  No hay datos suficientes para generar el gráfico con los
-                  filtros seleccionados.
-                </p>
+                <p>No hay datos suficientes para generar el gráfico con los filtros seleccionados.</p>
               </div>
             ) : (
               <div className="grafico-distribucion-wrapper">
-                <ResponsiveContainer width="100%" height={400}>
-                  <ScatterChart
-                    margin={{ top: 20, right: 20, bottom: 20, left: 20 }}
-                  >
+                <h3>Análisis de Puntaje vs Tiempo</h3>
+                <p className="grafico-subtitulo">Minijuego: {minijuegoSeleccionado}</p>
+                
+                <ResponsiveContainer width="100%" height={500}>
+                  <ScatterChart margin={{ top: 20, right: 30, bottom: 50, left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis
-                      type="number"
-                      dataKey="x"
-                      name="Tiempo (segundos)"
+                    <XAxis 
+                      type="number" 
+                      dataKey="x" 
+                      name="Tiempo (segundos)" 
                       stroke="#fff"
-                      label={{
-                        value: "Tiempo (segundos)",
-                        position: "insideBottom",
-                        offset: -5,
-                        fill: "#fff",
+                      label={{ 
+                        value: 'Tiempo (segundos)', 
+                        position: 'insideBottom', 
+                        offset: -5, 
+                        fill: '#fff' 
                       }}
+                      domain={['auto', 'auto']}
                     />
-                    <YAxis
-                      type="number"
-                      dataKey="y"
+                    <YAxis 
+                      type="number" 
+                      dataKey="y" 
                       name="Puntaje"
                       stroke="#fff"
-                      label={{
-                        value: "Puntaje",
-                        angle: -90,
-                        position: "insideLeft",
-                        offset: 10,
-                        fill: "#fff",
+                      label={{ 
+                        value: 'Puntaje', 
+                        angle: -90, 
+                        position: 'insideLeft', 
+                        offset: 10, 
+                        fill: '#fff' 
                       }}
+                      domain={['auto', 'auto']}
                     />
-                    <ZAxis range={[60, 60]} />
                     <Tooltip content={<CustomTooltip />} />
-                    {datosCurva.length > 0 && (
+                    
+                    {/* Puntos agrupados por estudiante */}
+                    {estudiantesUnicos.map((nombre, index) => {
+                      const puntosEstudiante = puntos.filter(p => p.nombre === nombre);
+                      return (
+                        <Scatter 
+                          key={`student-${index}`}
+                          name={nombre}
+                          data={puntosEstudiante}
+                          fill={colorMap[nombre]}
+                          shape="circle"
+                        />
+                      );
+                    })}
+                    
+                    {/* Curva de tendencia */}
+                    {curva.length > 0 && (
                       <Scatter
                         name="Línea de tendencia"
-                        data={datosCurva}
-                        line={{
-                          stroke: "black",
-                          strokeWidth: 2,
-                          strokeDasharray: "5 5",
-                        }}
-                        fill="none"
+                        data={curva}
+                        line={{ stroke: 'black', strokeWidth: 2, strokeDasharray: '5 5' }}
+                        shape={() => null} // No mostrar puntos para la curva
                         legendType="line"
                       />
                     )}
-                    <Scatter
-                      name="Datos individuales"
-                      data={datosScatter}
-                      fill="#FF8042"
-                    >
-                      {datosScatter.map((entry, index) => {
-                        // Asignar colores basados en el nombre del estudiante para que sean consistentes
-                        const colorIndex = entry.nombre
-                          ? entry.nombre.charCodeAt(0) % COLORS.length
-                          : index % COLORS.length;
-
-                        return (
-                          <Cell
-                            key={`cell-${index}`}
-                            fill={COLORS[colorIndex]}
-                          />
-                        );
-                      })}
-                    </Scatter>
-                    <Legend
+                    
+                    <Legend 
+                      layout="vertical"
                       verticalAlign="top"
-                      height={36}
-                      wrapperStyle={{ fontSize: "12px", color: "#fff" }}
+                      align="right"
+                      wrapperStyle={{ 
+                        paddingLeft: '10px',
+                        fontSize: '12px', 
+                        color: '#fff',
+                        maxHeight: '300px',
+                        overflowY: 'auto'
+                      }}
                     />
                   </ScatterChart>
                 </ResponsiveContainer>
-
+                
                 <div className="estadisticas-distribucion">
-                  <h4>Estadísticas para {minijuegoSeleccionado}</h4>
-                  <EstadisticasMinijuego
-                    datos={datosScatter}
-                    minijuegoSeleccionado={minijuegoSeleccionado}
+                  <h4>Estadísticas de {minijuegoSeleccionado}</h4>
+                  <EstadisticasMinijuego 
+                    datos={puntos} 
+                    minijuegoSeleccionado={minijuegoSeleccionado} 
                   />
                 </div>
               </div>
