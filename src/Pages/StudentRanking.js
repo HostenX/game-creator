@@ -8,8 +8,7 @@ const StudentRanking = () => {
   useEffect(() => {
     const fetchRanking = async () => {
       const data = await getStudentRanking();
-      console.log("Datos recibidos:", data); // Verifica que es un array
-      setRanking(Array.isArray(data) ? data : []);
+            setRanking(Array.isArray(data) ? data : []);
     };
     fetchRanking();
   }, []);
@@ -24,13 +23,13 @@ const StudentRanking = () => {
 
   return (
     <div className="ranking-container">
-      <h2>Ranking de Estudiantes</h2>
+      <h2>Student Ranking</h2>
       <table className="ranking-table">
         <thead>
           <tr>
-            <th>Posición</th>
-            <th>Nombre</th>
-            <th>Puntos</th>
+            <th>Place</th>
+            <th>Name</th>
+            <th>Score</th>
           </tr>
         </thead>
         <tbody>

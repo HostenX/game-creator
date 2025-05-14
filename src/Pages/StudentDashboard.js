@@ -17,7 +17,7 @@ const StudentDashboard = () => {
 
     return (
         <div className="student-dashboard">
-            <h2>Dashboard del Estudiante</h2>
+            <h2>Student Dashboard</h2>
             
             <div className="dashboard-controls">
                 <button onClick={() => setIsModalOpen(true)}>Actualizar Credenciales</button>
@@ -25,7 +25,7 @@ const StudentDashboard = () => {
                     onClick={toggleGame} 
                     className={showGame ? "success" : ""}
                 >
-                    {showGame ? "Cerrar Juego" : "Jugar Ahora"}
+                    {showGame ? "Close Game" : "Play Now"}
                 </button>
             </div>
             

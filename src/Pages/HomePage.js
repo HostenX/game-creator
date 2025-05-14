@@ -53,18 +53,6 @@ const HomePage = () => {
           title="Ejemplos de Minijuegos"
           content="Nuestra biblioteca incluye una variedad de actividades interactivas diseñadas por expertos en pedagogía lingüística: 'Completa la frase', donde debes seleccionar términos apropiados según el contexto; 'Conecta preguntas y respuestas', para practicar diálogos naturales"
         />
-        
-        <InfoSection
-          id="benefits-section"
-          title="Beneficios"
-          content="Al utilizar nuestra plataforma experimentarás múltiples ventajas: aprendizaje acelerado mediante la combinación de estímulos visuales, auditivos e interactivos; desarrollo natural de fluidez lingüística en contextos significativos; refuerzo de estructuras gramaticales sin la monotonía de métodos tradicionales; expansión de vocabulario temático; y un sistema de recompensas que mantienen la motivación constantemente alta."
-        />
-        
-        <InfoSection
-          id="contact-section"
-          title="Contacto"
-          content="¿Tienes preguntas sobre nuestra plataforma? Estamos aquí para ayudarte. Contáctanos a través de nuestro correo support@plataforma.com o visita nuestras redes sociales para unirte a nuestra comunidad de aprendices y educadores. Ofrecemos demostraciones gratuitas para instituciones educativas y planes especiales para implementación en escuelas y academias."
-        />
       </div>
     </div>
   );
