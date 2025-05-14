@@ -622,52 +622,69 @@ const ResultadosTable = () => {
       // Vamos a reemplazar el caso 'distribucion' dentro del switch
       case "distribucion": {
         // Adaptado para usar un solo color de puntos y mejor cálculo de curva de tendencia
-            const obtenerDatosGrafico = () => {
-  if (!resultados?.length || !minijuegoSeleccionado) return { puntos: [], curva: [] };
-  
-  let datosFiltrados = resultados.filter(resultado =>
-    (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado
-  );
-  
-  if (fechaInicio && fechaFin) {
-    const fechaInicioObj = new Date(fechaInicio);
-    const fechaFinObj = new Date(fechaFin);
-    fechaFinObj.setHours(23, 59, 59);
-    datosFiltrados = datosFiltrados.filter(resultado => {
-      const fechaResultado = new Date(resultado.fecha || resultado.fechaResultado);
-      return fechaResultado >= fechaInicioObj && fechaResultado <= fechaFinObj;
-    });
-  }
-  
-  if (!datosFiltrados.length) return { puntos: [], curva: [] };
+        // Función mejorada para obtener y preparar los datos del gráfico
+        const obtenerDatosGrafico = () => {
+          if (!resultados?.length || !minijuegoSeleccionado) return { puntos: [], curva: [] };
+          
+          let datosFiltrados = resultados.filter(resultado =>
+            (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado
+          );
+          
+          if (fechaInicio && fechaFin) {
+            const fechaInicioObj = new Date(fechaInicio);
+            const fechaFinObj = new Date(fechaFin);
+            fechaFinObj.setHours(23, 59, 59);
+            datosFiltrados = datosFiltrados.filter(resultado => {
+              const fechaResultado = new Date(resultado.fecha || resultado.fechaResultado);
+              return fechaResultado >= fechaInicioObj && fechaResultado <= fechaFinObj;
+            });
+          }
+          
+          if (!datosFiltrados.length) return { puntos: [], curva: [] };
 
-  // Mapeo mejorado que incluye todos los campos necesarios para el tooltip
-  const puntosScatter = datosFiltrados.map(resultado => {
-    // Console log para depuración (puedes remover esto después)
-    console.log("Datos originales de resultado:", resultado);
-    
-    return {
-      x: resultado.tiempoSegundos || 0,
-      y: resultado.puntaje || 0,
-      // Campos adicionales para el tooltip
-      nombre: resultado.nombreCompleto || resultado.nombre || "N/A",
-      curso: resultado.curso || "N/A",
-      puntaje: resultado.puntaje || 0,
-      tiempo: formatUtils.tiempo(resultado.tiempoSegundos),
-      // Asegúrate de que estos campos existan o tengan valores predeterminados adecuados
-      puntosBase: resultado.puntosBase || resultado.puntos_base || 0,
-      penalidadPuntos: resultado.penalidadPuntos || resultado.penalidad_puntos || resultado.penalidad || 0,
-      fecha: formatUtils.formatearFecha(resultado.fecha || resultado.fechaResultado || new Date()),
-      tipo: 'dato'
-    };
-  });
-      
+          // Mapeo mejorado que incluye todos los campos necesarios para el tooltip
+          const puntosScatter = datosFiltrados.map(resultado => {    
+            // Formatear la fecha correctamente sin depender de formatUtils
+            const formatearFecha = (fechaStr) => {
+              if (!fechaStr) return "N/A";
+              try {
+                const fecha = new Date(fechaStr);
+                return fecha.toLocaleDateString() + ' ' + fecha.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+              } catch (e) {
+                return fechaStr; // Devolver la fecha original si hay problemas al parsear
+              }
+            };
+            
+            // Formatear tiempo en segundos a formato mm:ss
+            const formatearTiempo = (segundos) => {
+              if (segundos === undefined || segundos === null) return "N/A";
+              const minutos = Math.floor(segundos / 60);
+              const segs = Math.floor(segundos % 60);
+              return `${minutos.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
+            };
+            
+            return {
+              x: resultado.tiempoSegundos || 0,
+              y: resultado.puntaje || 0,
+              // Campos adicionales para el tooltip
+              nombre: resultado.nombreCompleto || resultado.nombre || "N/A",
+              curso: resultado.curso || "N/A",
+              puntaje: resultado.puntaje || 0,
+              tiempo: resultado.tiempoFormateado || formatearTiempo(resultado.tiempoSegundos),
+              // Estos campos ya existen en los datos según el log
+              puntosBase: resultado.puntosBase || 0,
+              penalidadPuntos: resultado.penalidadPuntos || 0,
+              fecha: formatearFecha(resultado.fecha || resultado.fechaResultado || new Date()),
+              tipo: 'dato'
+            };
+          });
+
           if (puntosScatter.length < 3) return { puntos: puntosScatter, curva: [] };
-      
+
           // Extraer vectores X e Y para cálculos
           const vectorX = puntosScatter.map(d => d.x);
           const vectorY = puntosScatter.map(d => d.y);
-      
+
           // Normalizar datos para evitar problemas numéricos
           const minX = Math.min(...vectorX);
           const maxX = Math.max(...vectorX);
@@ -675,7 +692,7 @@ const ResultadosTable = () => {
           
           // Si el rango es muy pequeño, evitamos la división por cero
           if (rangoX < 0.00001) return { puntos: puntosScatter, curva: [] };
-      
+
           // Función para normalizar X
           const normalizar = x => (x - minX) / rangoX;
           
@@ -775,7 +792,7 @@ const ResultadosTable = () => {
           // Generar puntos para la curva, desnormalizando los valores
           const pasos = 100; // Más puntos para una curva más suave
           const puntosCurva = [];
-      
+
           // Calcular los valores mínimos y máximos para el eje Y
           const minY = Math.min(...vectorY);
           const maxY = Math.max(...vectorY);
