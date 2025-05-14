@@ -621,254 +621,307 @@ const ResultadosTable = () => {
 
       // Vamos a reemplazar el caso 'distribucion' dentro del switch
       case "distribucion": {
-        // Adaptado para usar un solo color de puntos y mejor cálculo de curva de tendencia
-            const obtenerDatosGrafico = () => {
-          if (!resultados?.length || !minijuegoSeleccionado) return { puntos: [], curva: [] };
-          let datosFiltrados = resultados.filter(resultado =>
-            (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado
-          );
-          if (fechaInicio && fechaFin) {
-            const fechaInicioObj = new Date(fechaInicio);
-            const fechaFinObj = new Date(fechaFin);
-            fechaFinObj.setHours(23, 59, 59);
-            datosFiltrados = datosFiltrados.filter(resultado => {
-              const fechaResultado = new Date(resultado.fecha || resultado.fechaResultado);
-              return fechaResultado >= fechaInicioObj && fechaResultado <= fechaFinObj;
-            });
-          }
-          if (!datosFiltrados.length) return { puntos: [], curva: [] };
+  // CustomTooltip mejorado para mostrar todos los datos
+  const CustomTooltip = ({ active, payload }) => {
+    if (active && payload?.length > 0 && payload[0].payload.tipo === "dato") {
+      const data = payload[0].payload;
+      return (
+        <div
+          className="custom-tooltip"
+          style={{
+            backgroundColor: "#2a1a4a",
+            padding: "10px",
+            border: "1px solid #ccc",
+            borderRadius: "5px",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+            color: "#fff",
+          }}
+        >
+          <p>
+            <strong>Estudiante:</strong> {data.nombre}
+          </p>
+          <p>
+            <strong>Curso:</strong> {data.curso}
+          </p>
+          <p>
+            <strong>Puntaje:</strong> {data.puntaje}
+          </p>
+          <p>
+            <strong>Tiempo:</strong> {data.tiempo}
+          </p>
+          <p>
+            <strong>Puntos Base:</strong> {data.puntosBase || 0}
+          </p>
+          <p>
+            <strong>Penalidad:</strong> {data.penalidadPuntos || 0}
+          </p>
+          <p>
+            <strong>Fecha:</strong> {data.fecha}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  // Función mejorada para obtener y preparar los datos del gráfico
+  const obtenerDatosGrafico = () => {
+    if (!resultados?.length || !minijuegoSeleccionado) return { puntos: [], curva: [] };
+    
+    let datosFiltrados = resultados.filter(resultado =>
+      (resultado.tituloMinijuego || resultado.minijuego || "Sin nombre") === minijuegoSeleccionado
+    );
+    
+    if (fechaInicio && fechaFin) {
+      const fechaInicioObj = new Date(fechaInicio);
+      const fechaFinObj = new Date(fechaFin);
+      fechaFinObj.setHours(23, 59, 59);
+      datosFiltrados = datosFiltrados.filter(resultado => {
+        const fechaResultado = new Date(resultado.fecha || resultado.fechaResultado);
+        return fechaResultado >= fechaInicioObj && fechaResultado <= fechaFinObj;
+      });
+    }
+    
+    if (!datosFiltrados.length) return { puntos: [], curva: [] };
+
+    // Mapeo mejorado que incluye todos los campos necesarios para el tooltip
+    const puntosScatter = datosFiltrados.map(resultado => ({
+      x: resultado.tiempoSegundos || 0,
+      y: resultado.puntaje || 0,
+      // Campos adicionales para el tooltip
+      nombre: resultado.nombreCompleto || "N/A",
+      curso: resultado.curso || "N/A",
+      puntaje: resultado.puntaje || 0,
+      tiempo: formatUtils.tiempo(resultado.tiempoSegundos),
+      puntosBase: resultado.puntosBase || 0,
+      penalidadPuntos: resultado.penalidadPuntos || 0,
+      fecha: formatUtils.formatearFecha(resultado.fecha || resultado.fechaResultado || new Date()),
+      tipo: 'dato'
+    }));
+
+    if (puntosScatter.length < 3) return { puntos: puntosScatter, curva: [] };
+
+    // Extraer vectores X e Y para cálculos
+    const vectorX = puntosScatter.map(d => d.x);
+    const vectorY = puntosScatter.map(d => d.y);
+
+    // Normalizar datos para evitar problemas numéricos
+    const minX = Math.min(...vectorX);
+    const maxX = Math.max(...vectorX);
+    const rangoX = maxX - minX;
+    
+    // Si el rango es muy pequeño, evitamos la división por cero
+    if (rangoX < 0.00001) return { puntos: puntosScatter, curva: [] };
+
+    // Función para normalizar X
+    const normalizar = x => (x - minX) / rangoX;
+    
+    // Datos normalizados
+    const datosNormalizados = puntosScatter.map(p => [normalizar(p.x), p.y]);
+    
+    // Función para calcular regresión polinomial con mejor control numérico
+    const calcularRegresion = (datos, grado = 2) => {
+      const n = datos.length;
+      if (n <= grado) return null; // No suficientes puntos para el grado deseado
       
-          const puntosScatter = datosFiltrados.map(resultado => ({
-            x: resultado.tiempoSegundos || 0,
-            y: resultado.puntaje || 0,
-            nombre: resultado.nombreCompleto || "N/A",
-            tiempo: formatUtils.tiempo(resultado.tiempoSegundos),
-            tipo: 'dato'
-          }));
-      
-          if (puntosScatter.length < 3) return { puntos: puntosScatter, curva: [] };
-      
-          // Extraer vectores X e Y para cálculos
-          const vectorX = puntosScatter.map(d => d.x);
-          const vectorY = puntosScatter.map(d => d.y);
-      
-          // Normalizar datos para evitar problemas numéricos
-          const minX = Math.min(...vectorX);
-          const maxX = Math.max(...vectorX);
-          const rangoX = maxX - minX;
-          
-          // Si el rango es muy pequeño, evitamos la división por cero
-          if (rangoX < 0.00001) return { puntos: puntosScatter, curva: [] };
-      
-          // Función para normalizar X
-          const normalizar = x => (x - minX) / rangoX;
-          
-          // Datos normalizados
-          const datosNormalizados = puntosScatter.map(p => [normalizar(p.x), p.y]);
-          
-          // Función para calcular regresión polinomial con mejor control numérico
-          const calcularRegresion = (datos, grado = 2) => {
-            const n = datos.length;
-            if (n <= grado) return null; // No suficientes puntos para el grado deseado
-            
-            // Crear la matriz X para regresión polinomial
-            const X = [];
-            for (let i = 0; i < n; i++) {
-              const fila = [];
-              const x = datos[i][0];
-              for (let j = 0; j <= grado; j++) {
-                fila.push(Math.pow(x, j));
-              }
-              X.push(fila);
-            }
-            
-            // Vector Y
-            const Y = datos.map(d => d[1]);
-            
-            // Calcular X^T * X
-            const XtX = Array(grado + 1).fill().map(() => Array(grado + 1).fill(0));
-            for (let i = 0; i <= grado; i++) {
-              for (let j = 0; j <= grado; j++) {
-                for (let k = 0; k < n; k++) {
-                  XtX[i][j] += X[k][i] * X[k][j];
-                }
-              }
-            }
-            
-            // Calcular X^T * Y
-            const XtY = Array(grado + 1).fill(0);
-            for (let i = 0; i <= grado; i++) {
-              for (let k = 0; k < n; k++) {
-                XtY[i] += X[k][i] * Y[k];
-              }
-            }
-            
-            // Resolver sistema de ecuaciones mediante eliminación de Gauss-Jordan
-            const matriz = [];
-            for (let i = 0; i <= grado; i++) {
-              const fila = [...XtX[i], XtY[i]];
-              matriz.push(fila);
-            }
-            
-            // Gauss-Jordan
-            for (let i = 0; i <= grado; i++) {
-              // Pivoteo parcial
-              let maxRow = i;
-              for (let j = i + 1; j <= grado; j++) {
-                if (Math.abs(matriz[j][i]) > Math.abs(matriz[maxRow][i])) {
-                  maxRow = j;
-                }
-              }
-              
-              if (maxRow !== i) {
-                [matriz[i], matriz[maxRow]] = [matriz[maxRow], matriz[i]];
-              }
-              
-              // Si el pivote es muy pequeño, consideramos que la matriz es singular
-              if (Math.abs(matriz[i][i]) < 1e-10) {
-                return null;
-              }
-              
-              // Normalizar fila por el pivote
-              const pivote = matriz[i][i];
-              for (let j = i; j <= grado + 1; j++) {
-                matriz[i][j] /= pivote;
-              }
-              
-              // Eliminación
-              for (let j = 0; j <= grado; j++) {
-                if (j !== i) {
-                  const factor = matriz[j][i];
-                  for (let k = i; k <= grado + 1; k++) {
-                    matriz[j][k] -= factor * matriz[i][k];
-                  }
-                }
-              }
-            }
-            
-            // Extraer solución
-            const coeficientes = matriz.map(fila => fila[grado + 1]);
-            return coeficientes;
-          };
-          
-          // Calcular coeficientes con datos normalizados
-          const coeficientes = calcularRegresion(datosNormalizados, 2);
-          
-          if (!coeficientes) return { puntos: puntosScatter, curva: [] };
-          
-          // Generar puntos para la curva, desnormalizando los valores
-          const pasos = 100; // Más puntos para una curva más suave
-          const puntosCurva = [];
-      
-          // Calcular los valores mínimos y máximos para el eje Y
-          const minY = Math.min(...vectorY);
-          const maxY = Math.max(...vectorY);
-          
-          for (let i = 0; i <= pasos; i++) {
-            const xNorm = i / pasos;
-            // Calcular Y usando el polinomio
-            let y = 0;
-            for (let j = 0; j < coeficientes.length; j++) {
-              y += coeficientes[j] * Math.pow(xNorm, j);
-            }
-            
-            // Desnormalizar X para obtener el valor original
-            const x = xNorm * rangoX + minX;
-            
-            // Limitar el valor de Y al rango de los datos originales
-            // para evitar valores extremos en la curva
-            y = Math.max(Math.min(y, maxY * 1.1), minY * 0.9);
-            
-            puntosCurva.push({ x, y, tipo: 'curva' });
-          }
-          
-          return { puntos: puntosScatter, curva: puntosCurva };
-        };
-      
-        const { puntos, curva } = obtenerDatosGrafico();
-      
-        return (
-          <>
-            <FiltrosDistribucion
-              minijuegoSeleccionado={minijuegoSeleccionado}
-              setMinijuegoSeleccionado={setMinijuegoSeleccionado}
-              fechaInicio={fechaInicio}
-              setFechaInicio={setFechaInicio}
-              fechaFin={fechaFin}
-              setFechaFin={setFechaFin}
-              miniJuegosDisponibles={miniJuegosDisponibles}
-            />
-      
-            {!minijuegoSeleccionado ? (
-              <div className="aviso-seleccion">
-                <p>Por favor, selecciona un minijuego para visualizar el gráfico.</p>
-              </div>
-            ) : puntos.length === 0 ? (
-              <div className="no-datos">
-                <p>No hay datos suficientes para generar el gráfico con los filtros seleccionados.</p>
-              </div>
-            ) : (
-              <div className="grafico-distribucion-wrapper">
-                <h3>Análisis de Puntaje vs Tiempo</h3>
-                <p className="grafico-subtitulo">Minijuego: {minijuegoSeleccionado}</p>
-      
-                <ResponsiveContainer width="100%" height={500}>
-                  <ScatterChart margin={{ top: 20, right: 30, bottom: 50, left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                    <XAxis
-                      type="number"
-                      dataKey="x"
-                      name="Tiempo (segundos)"
-                      stroke="#fff"
-                      label={{ value: 'Tiempo (segundos)', position: 'insideBottom', offset: -5, fill: '#fff' }}
-                      domain={['auto', 'auto']}
-                      allowDataOverflow={false}
-                    />
-                    <YAxis
-                      type="number"
-                      dataKey="y"
-                      name="Puntaje"
-                      stroke="#fff"
-                      label={{ value: 'Puntaje', angle: -90, position: 'insideLeft', offset: 10, fill: '#fff' }}
-                      domain={['auto', 'auto']}
-                      allowDataOverflow={false}
-                      padding={{ top: 20, bottom: 20 }}
-                    />
-                    <Tooltip content={<CustomTooltip />} />
-      
-                    {/* Puntos todos del mismo color */}
-                    <Scatter
-                      name="Intentos"
-                      data={puntos}
-                      fill="#00b894"
-                      shape="circle"
-                    />
-      
-                    {/* Curva de tendencia */}
-                    {curva.length > 0 && (
-                      <Scatter
-                        name="Tendencia"
-                        data={curva}
-                        line={{ stroke: '#FFA726', strokeWidth: 2 }}
-                        shape={() => null}
-                        legendType="line"
-                      />
-                    )}
-                  </ScatterChart>
-                </ResponsiveContainer>
-      
-                <div className="estadisticas-distribucion">
-                  <h4>Estadísticas de {minijuegoSeleccionado}</h4>
-                  <EstadisticasMinijuego
-                    datos={puntos}
-                    minijuegoSeleccionado={minijuegoSeleccionado}
-                  />
-                </div>
-              </div>
-            )}
-          </>
-        );
+      // Crear la matriz X para regresión polinomial
+      const X = [];
+      for (let i = 0; i < n; i++) {
+        const fila = [];
+        const x = datos[i][0];
+        for (let j = 0; j <= grado; j++) {
+          fila.push(Math.pow(x, j));
+        }
+        X.push(fila);
       }
+      
+      // Vector Y
+      const Y = datos.map(d => d[1]);
+      
+      // Calcular X^T * X
+      const XtX = Array(grado + 1).fill().map(() => Array(grado + 1).fill(0));
+      for (let i = 0; i <= grado; i++) {
+        for (let j = 0; j <= grado; j++) {
+          for (let k = 0; k < n; k++) {
+            XtX[i][j] += X[k][i] * X[k][j];
+          }
+        }
+      }
+      
+      // Calcular X^T * Y
+      const XtY = Array(grado + 1).fill(0);
+      for (let i = 0; i <= grado; i++) {
+        for (let k = 0; k < n; k++) {
+          XtY[i] += X[k][i] * Y[k];
+        }
+      }
+      
+      // Resolver sistema de ecuaciones mediante eliminación de Gauss-Jordan
+      const matriz = [];
+      for (let i = 0; i <= grado; i++) {
+        const fila = [...XtX[i], XtY[i]];
+        matriz.push(fila);
+      }
+      
+      // Gauss-Jordan
+      for (let i = 0; i <= grado; i++) {
+        // Pivoteo parcial
+        let maxRow = i;
+        for (let j = i + 1; j <= grado; j++) {
+          if (Math.abs(matriz[j][i]) > Math.abs(matriz[maxRow][i])) {
+            maxRow = j;
+          }
+        }
+        
+        if (maxRow !== i) {
+          [matriz[i], matriz[maxRow]] = [matriz[maxRow], matriz[i]];
+        }
+        
+        // Si el pivote es muy pequeño, consideramos que la matriz es singular
+        if (Math.abs(matriz[i][i]) < 1e-10) {
+          return null;
+        }
+        
+        // Normalizar fila por el pivote
+        const pivote = matriz[i][i];
+        for (let j = i; j <= grado + 1; j++) {
+          matriz[i][j] /= pivote;
+        }
+        
+        // Eliminación
+        for (let j = 0; j <= grado; j++) {
+          if (j !== i) {
+            const factor = matriz[j][i];
+            for (let k = i; k <= grado + 1; k++) {
+              matriz[j][k] -= factor * matriz[i][k];
+            }
+          }
+        }
+      }
+      
+      // Extraer solución
+      const coeficientes = matriz.map(fila => fila[grado + 1]);
+      return coeficientes;
+    };
+    
+    // Calcular coeficientes con datos normalizados
+    const coeficientes = calcularRegresion(datosNormalizados, 2);
+    
+    if (!coeficientes) return { puntos: puntosScatter, curva: [] };
+    
+    // Generar puntos para la curva, desnormalizando los valores
+    const pasos = 100; // Más puntos para una curva más suave
+    const puntosCurva = [];
+
+    // Calcular los valores mínimos y máximos para el eje Y
+    const minY = Math.min(...vectorY);
+    const maxY = Math.max(...vectorY);
+    
+    for (let i = 0; i <= pasos; i++) {
+      const xNorm = i / pasos;
+      // Calcular Y usando el polinomio
+      let y = 0;
+      for (let j = 0; j < coeficientes.length; j++) {
+        y += coeficientes[j] * Math.pow(xNorm, j);
+      }
+      
+      // Desnormalizar X para obtener el valor original
+      const x = xNorm * rangoX + minX;
+      
+      // Limitar el valor de Y al rango de los datos originales
+      // para evitar valores extremos en la curva
+      y = Math.max(Math.min(y, maxY * 1.1), minY * 0.9);
+      
+      puntosCurva.push({ x, y, tipo: 'curva' });
+    }
+    
+    return { puntos: puntosScatter, curva: puntosCurva };
+  };
+
+  const { puntos, curva } = obtenerDatosGrafico();
+
+  return (
+    <>
+      <FiltrosDistribucion
+        minijuegoSeleccionado={minijuegoSeleccionado}
+        setMinijuegoSeleccionado={setMinijuegoSeleccionado}
+        fechaInicio={fechaInicio}
+        setFechaInicio={setFechaInicio}
+        fechaFin={fechaFin}
+        setFechaFin={setFechaFin}
+        miniJuegosDisponibles={miniJuegosDisponibles}
+      />
+
+      {!minijuegoSeleccionado ? (
+        <div className="aviso-seleccion">
+          <p>Por favor, selecciona un minijuego para visualizar el gráfico.</p>
+        </div>
+      ) : puntos.length === 0 ? (
+        <div className="no-datos">
+          <p>No hay datos suficientes para generar el gráfico con los filtros seleccionados.</p>
+        </div>
+      ) : (
+        <div className="grafico-distribucion-wrapper">
+          <h3>Análisis de Puntaje vs Tiempo</h3>
+          <p className="grafico-subtitulo">Minijuego: {minijuegoSeleccionado}</p>
+
+          <ResponsiveContainer width="100%" height={500}>
+            <ScatterChart margin={{ top: 20, right: 30, bottom: 50, left: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+              <XAxis
+                type="number"
+                dataKey="x"
+                name="Tiempo (segundos)"
+                stroke="#fff"
+                label={{ value: 'Tiempo (segundos)', position: 'insideBottom', offset: -5, fill: '#fff' }}
+                domain={['auto', 'auto']}
+                allowDataOverflow={false}
+              />
+              <YAxis
+                type="number"
+                dataKey="y"
+                name="Puntaje"
+                stroke="#fff"
+                label={{ value: 'Puntaje', angle: -90, position: 'insideLeft', offset: 10, fill: '#fff' }}
+                domain={['auto', 'auto']}
+                allowDataOverflow={false}
+                padding={{ top: 20, bottom: 20 }}
+              />
+              <Tooltip content={<CustomTooltip />} />
+
+              {/* Puntos todos del mismo color */}
+              <Scatter
+                name="Intentos"
+                data={puntos}
+                fill="#00b894"
+                shape="circle"
+              />
+
+              {/* Curva de tendencia */}
+              {curva.length > 0 && (
+                <Scatter
+                  name="Tendencia"
+                  data={curva}
+                  line={{ stroke: '#FFA726', strokeWidth: 2 }}
+                  shape={() => null}
+                  legendType="line"
+                />
+              )}
+            </ScatterChart>
+          </ResponsiveContainer>
+
+          <div className="estadisticas-distribucion">
+            <h4>Estadísticas de {minijuegoSeleccionado}</h4>
+            <EstadisticasMinijuego
+              datos={puntos}
+              minijuegoSeleccionado={minijuegoSeleccionado}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
       default:
         return null;
