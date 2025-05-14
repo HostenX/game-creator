@@ -35,7 +35,7 @@ const Header = () => {
                 <nav className="header-nav">
                     <ul>
                         <li><Link to="/">Inicio</Link></li>
-                        <li><Link to="/login">Iniciar Sesion</Link></li>
+                        <li><Link to="/login">Iniciar Sesión</Link></li>
                         <li><Link to="/register">Registrarse</Link></li>
                     </ul>
                 </nav>
