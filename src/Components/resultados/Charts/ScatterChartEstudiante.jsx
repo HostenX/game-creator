@@ -12,8 +12,8 @@ import {
   ZAxis,
   Cell,
 } from "recharts";
-import { EstudianteTooltip, calcularEstadisticasEstudiante } from "../../../utils/dataProcessingUtils";
-import { formatTiempo } from "../../../utils/formatUtils";
+import { EstudianteTooltip, calcularEstadisticasEstudiante } from "../../utils/dataProcessingUtils";
+import { formatTiempo } from "../../utils/formatUtils";
 
 // Función para generar colores únicos por minijuego
 const generarColorPorMinijuego = (minijuegos) => {
