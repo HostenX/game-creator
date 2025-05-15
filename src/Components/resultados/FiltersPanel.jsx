@@ -1,4 +1,4 @@
-// src/components/resultados/FiltersPanel.jsx - Versión mejorada
+// src/components/resultados/FiltersPanel.jsx - Versión mejorada para mapear estudiantes de la tabla
 import React, { useState, useEffect } from "react";
 
 /**
@@ -33,9 +33,11 @@ const FiltersPanel = ({
   const [minijuegosDisponibles, setMinijuegosDisponibles] = useState([]);
   const [estudiantesDisponibles, setEstudiantesDisponibles] = useState([]);
 
-  // Extraer listas únicas de minijuegos y estudiantes cuando cambian los resultados
+  // Extraer estudiantes directamente de los resultados visibles
   useEffect(() => {
     if (resultados && resultados.length > 0) {
+      console.log("Total de resultados para extraer estudiantes:", resultados.length);
+      
       // Extraer minijuegos únicos
       const minijuegos = [...new Set(
         resultados.map(item => 
@@ -43,35 +45,56 @@ const FiltersPanel = ({
         )
       )];
       
-      // Extraer estudiantes únicos
-      const estudiantes = [];
-      const estudiantesIds = new Set();
+      // Extraer estudiantes únicos directamente de los resultados
+      const mapEstudiantes = new Map(); // Usamos Map para evitar duplicados por ID
       
-      resultados.forEach(item => {
-        const id = item.usuarioId || item.idUsuario;
-        const nombre = item.nombreCompleto || item.nombre || "Sin nombre";
+      resultados.forEach(resultado => {
+        const id = resultado.usuarioId || resultado.idUsuario;
+        const nombre = resultado.nombreCompleto || resultado.nombre || "Sin nombre";
         
-        // Evitar duplicados usando el ID como clave
-        if (id && !estudiantesIds.has(id)) {
-          estudiantesIds.add(id);
-          estudiantes.push({ id, nombre });
+        // Sólo agregamos si tenemos un ID válido y no lo habíamos agregado antes
+        if (id && !mapEstudiantes.has(id)) {
+          mapEstudiantes.set(id, { id, nombre });
         }
       });
       
-      // Ordenar alfabéticamente por nombre
-      estudiantes.sort((a, b) => a.nombre.localeCompare(b.nombre));
+      // Convertimos el Map a un array y ordenamos por nombre
+      const listaEstudiantes = [...mapEstudiantes.values()]
+        .sort((a, b) => a.nombre.localeCompare(b.nombre));
+      
+      console.log("Estudiantes extraídos:", listaEstudiantes);
       
       setMinijuegosDisponibles(minijuegos);
-      setEstudiantesDisponibles(estudiantes);
-      
-      // Depuración
-      console.log("Estudiantes encontrados:", estudiantes);
+      setEstudiantesDisponibles(listaEstudiantes);
     }
   }, [resultados]);
+  
+  // Aplicar filtros tanto a la tabla como a los gráficos
+  const aplicarFiltros = () => {
+    cargarResultados();
+  };
+  
+  // Manejar cambios en los filtros de dropdown directamente
+  const handleMinijuegoChange = (e) => {
+    setMinijuegoSeleccionado(e.target.value);
+    // No aplicamos inmediatamente para dar al usuario tiempo de seleccionar
+  };
+  
+  const handleEstudianteChange = (e) => {
+    const estudianteId = e.target.value;
+    if (estudianteId) {
+      const estudiante = estudiantesDisponibles.find(e => String(e.id) === String(estudianteId));
+      console.log("Estudiante seleccionado:", estudiante);
+      setEstudianteSeleccionado(estudiante);
+    } else {
+      setEstudianteSeleccionado(null);
+    }
+    // No aplicamos inmediatamente para dar al usuario tiempo de seleccionar
+  };
 
   return (
     <div className="filtros-container">
-      {/* Filtros originales */}
+      {/* Filtros de búsqueda unificados */}
       <div className="filtros-busqueda">
         <h3>Filtros de Búsqueda</h3>
         <div className="filtro-grupo">
@@ -104,7 +127,7 @@ const FiltersPanel = ({
           />
         </div>
 
-        <button className="filtrar-btn" onClick={cargarResultados}>
+        <button className="filtrar-btn" onClick={aplicarFiltros}>
           Aplicar Filtros
         </button>
 
@@ -116,7 +139,7 @@ const FiltersPanel = ({
         </button>
       </div>
 
-      {/* Filtros para gráficos */}
+      {/* Opciones de visualización */}
       <div className="filtros-graficos">
         <h3>Visualización de Datos</h3>
         
@@ -146,7 +169,7 @@ const FiltersPanel = ({
                 <label>Minijuego:</label>
                 <select
                   value={minijuegoSeleccionado}
-                  onChange={(e) => setMinijuegoSeleccionado(e.target.value)}
+                  onChange={handleMinijuegoChange}
                 >
                   <option value="">-- Todos los Minijuegos --</option>
                   {minijuegosDisponibles.map((minijuego, index) => (
@@ -163,25 +186,35 @@ const FiltersPanel = ({
                 <label>Estudiante:</label>
                 <select
                   value={estudianteSeleccionado ? estudianteSeleccionado.id : ""}
-                  onChange={(e) => {
-                    const estudianteId = e.target.value;
-                    if (estudianteId) {
-                      const estudiante = estudiantesDisponibles.find(e => e.id.toString() === estudianteId);
-                      setEstudianteSeleccionado(estudiante);
-                    } else {
-                      setEstudianteSeleccionado(null);
-                    }
-                  }}
+                  onChange={handleEstudianteChange}
                 >
                   <option value="">-- Todos los Estudiantes --</option>
-                  {estudiantesDisponibles.map((estudiante, index) => (
-                    <option key={`estudiante-${index}`} value={estudiante.id}>
-                      {estudiante.nombre}
-                    </option>
-                  ))}
+                  {estudiantesDisponibles.length > 0 ? (
+                    estudiantesDisponibles.map((estudiante, index) => (
+                      <option key={`estudiante-${index}`} value={estudiante.id}>
+                        {estudiante.nombre}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>Cargando estudiantes...</option>
+                  )}
                 </select>
               </div>
             )}
+            
+            {/* Botón para aplicar filtros de gráficos */}
+            <button className="filtrar-btn" onClick={aplicarFiltros}>
+              Actualizar Visualización
+            </button>
+            
+            {/* Información de depuración */}
+            <div className="debug-info" style={{ fontSize: '0.8em', color: '#aaa', marginTop: '10px' }}>
+              {estudiantesDisponibles.length > 0 ? (
+                <p>Estudiantes disponibles: {estudiantesDisponibles.length}</p>
+              ) : (
+                <p>No hay estudiantes disponibles</p>
+              )}
+            </div>
           </>
         )}
       </div>
