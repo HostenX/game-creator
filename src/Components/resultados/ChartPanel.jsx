@@ -13,7 +13,7 @@ import {
   procesarDatosPie,
   procesarDatosDistribucion,
   procesarDatosEstudiante
-} from "../utils";
+} from "../../utils";
 
 /**
  * Panel principal de gráficos que contiene selector y renderiza el gráfico seleccionado
