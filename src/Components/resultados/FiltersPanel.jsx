@@ -1,4 +1,4 @@
-// src/components/resultados/FiltersPanel.jsx - Versión mejorada para mapear estudiantes de la tabla
+// src/components/resultados/FiltersPanel.jsx - Versión corregida para los campos reales
 import React, { useState, useEffect } from "react";
 
 /**
@@ -45,20 +45,23 @@ const FiltersPanel = ({
         )
       )];
       
-      // Extraer estudiantes únicos directamente de los resultados
-      const mapEstudiantes = new Map(); // Usamos Map para evitar duplicados por ID
+      // Extraer estudiantes únicos por nombre completo
+      // Creamos un Map usando el nombre completo como clave para evitar duplicados
+      const mapEstudiantes = new Map();
       
       resultados.forEach(resultado => {
-        const id = resultado.usuarioId || resultado.idUsuario;
-        const nombre = resultado.nombreCompleto || resultado.nombre || "Sin nombre";
+        // Usamos el nombre completo como identificador único
+        const nombre = resultado.nombreCompleto;
         
-        // Sólo agregamos si tenemos un ID válido y no lo habíamos agregado antes
-        if (id && !mapEstudiantes.has(id)) {
-          mapEstudiantes.set(id, { id, nombre });
+        // Sólo agregamos si tenemos un nombre válido y no lo habíamos agregado antes
+        if (nombre && !mapEstudiantes.has(nombre)) {
+          // Usamos el $id como ID para la selección si está disponible
+          const id = resultado.$id || resultado.id || nombre;
+          mapEstudiantes.set(nombre, { id, nombre });
         }
       });
       
-      // Convertimos el Map a un array y ordenamos por nombre
+      // Convertimos el Map a un array y ordenamos alfabéticamente
       const listaEstudiantes = [...mapEstudiantes.values()]
         .sort((a, b) => a.nombre.localeCompare(b.nombre));
       
@@ -77,19 +80,20 @@ const FiltersPanel = ({
   // Manejar cambios en los filtros de dropdown directamente
   const handleMinijuegoChange = (e) => {
     setMinijuegoSeleccionado(e.target.value);
-    // No aplicamos inmediatamente para dar al usuario tiempo de seleccionar
   };
   
   const handleEstudianteChange = (e) => {
-    const estudianteId = e.target.value;
-    if (estudianteId) {
-      const estudiante = estudiantesDisponibles.find(e => String(e.id) === String(estudianteId));
+    const estudianteNombre = e.target.value;
+    if (estudianteNombre) {
+      const estudiante = estudiantesDisponibles.find(e => e.nombre === estudianteNombre);
       console.log("Estudiante seleccionado:", estudiante);
       setEstudianteSeleccionado(estudiante);
+      // Actualizamos el valor del campo usuarioId para filtrar por este estudiante
+      setUsuarioId(estudiante.id);
     } else {
       setEstudianteSeleccionado(null);
+      setUsuarioId("");
     }
-    // No aplicamos inmediatamente para dar al usuario tiempo de seleccionar
   };
 
   return (
@@ -185,13 +189,13 @@ const FiltersPanel = ({
               <div className="filtro-grupo">
                 <label>Estudiante:</label>
                 <select
-                  value={estudianteSeleccionado ? estudianteSeleccionado.id : ""}
+                  value={estudianteSeleccionado ? estudianteSeleccionado.nombre : ""}
                   onChange={handleEstudianteChange}
                 >
                   <option value="">-- Todos los Estudiantes --</option>
                   {estudiantesDisponibles.length > 0 ? (
                     estudiantesDisponibles.map((estudiante, index) => (
-                      <option key={`estudiante-${index}`} value={estudiante.id}>
+                      <option key={`estudiante-${index}`} value={estudiante.nombre}>
                         {estudiante.nombre}
                       </option>
                     ))
