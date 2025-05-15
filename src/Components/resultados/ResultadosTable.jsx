@@ -1,11 +1,11 @@
-// src/components/resultados/ResultadosTable.jsx
+// src/components/resultados/ResultadosTable.jsx (actualizado)
 import React, { useState, useEffect } from "react";
 import { exportarResultados, obtenerResultados } from "../../Services/apiService";
 import FiltersPanel from "./FiltersPanel";
 import ChartPanel from "./ChartPanel";
 import DataTable from "./DataTable";
 import ExportModal from "./ExportModal";
-import { extraerMinijuegosUnicos } from "../utils/dataProcessingUtils";
+import { extraerMinijuegosUnicos } from "../../utils/dataProcessingUtils";
 
 /**
  * Componente principal de la tabla de resultados
@@ -36,6 +36,10 @@ const ResultadosTable = () => {
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
   const [miniJuegosDisponibles, setMiniJuegosDisponibles] = useState([]);
+  
+  // Nuevos estados para visualización por estudiante
+  const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
+  const [modoVisualizacion, setModoVisualizacion] = useState("general");
 
   // Obtener creador ID al cargar el componente
   useEffect(() => {
@@ -92,6 +96,13 @@ const ResultadosTable = () => {
       // Extraer lista de minijuegos disponibles
       const uniqueMinijuegos = extraerMinijuegosUnicos(resultadosProcesados);
       setMiniJuegosDisponibles(uniqueMinijuegos);
+      
+      // Reset de selecciones al cargar nuevos datos
+      if (modoVisualizacion === "porMinijuego") {
+        setMinijuegoSeleccionado("");
+      } else if (modoVisualizacion === "porEstudiante") {
+        setEstudianteSeleccionado(null);
+      }
     } catch (err) {
       setError("Error al cargar los resultados. Por favor, intenta de nuevo.");
     } finally {
@@ -120,13 +131,26 @@ const ResultadosTable = () => {
       );
     }
   };
+  
+  // Manejar cambio en modo de visualización
+  const handleModoVisualizacionChange = (nuevoModo) => {
+    setModoVisualizacion(nuevoModo);
+    // Limpiar selecciones según corresponda
+    if (nuevoModo !== "porMinijuego") {
+      setMinijuegoSeleccionado("");
+    }
+    if (nuevoModo !== "porEstudiante") {
+      setEstudianteSeleccionado(null);
+    }
+  };
 
   return (
     <div className="resultados-container">
       <h2>Resultados de Minijuegos</h2>
 
-      {/* Panel de Filtros */}
+      {/* Panel de Filtros Unificado */}
       <FiltersPanel
+        // Propiedades para filtros de búsqueda
         usuarioId={usuarioId}
         setUsuarioId={setUsuarioId}
         minijuegoId={minijuegoId}
@@ -135,14 +159,32 @@ const ResultadosTable = () => {
         setCurso={setCurso}
         cargarResultados={cargarResultados}
         setShowExportModal={setShowExportModal}
+        
+        // Propiedades para visualización
         mostrarGraficos={mostrarGraficos}
         setMostrarGraficos={setMostrarGraficos}
+        
+        // Propiedades para filtros de minijuego
+        minijuegoSeleccionado={minijuegoSeleccionado}
+        setMinijuegoSeleccionado={setMinijuegoSeleccionado}
+        
+        // Propiedades para filtros de estudiante
+        resultados={resultados}
+        estudianteSeleccionado={estudianteSeleccionado}
+        setEstudianteSeleccionado={setEstudianteSeleccionado}
+        
+        // Propiedades para modo de visualización
+        modoVisualizacion={modoVisualizacion}
+        setModoVisualizacion={handleModoVisualizacionChange}
       />
 
       {/* Panel de Gráficos */}
       <ChartPanel
+        // Propiedades generales
         resultados={resultados}
         mostrarGraficos={mostrarGraficos}
+        
+        // Propiedades para visualización por minijuego
         minijuegoSeleccionado={minijuegoSeleccionado}
         setMinijuegoSeleccionado={setMinijuegoSeleccionado}
         fechaInicio={fechaInicio}
@@ -150,6 +192,12 @@ const ResultadosTable = () => {
         fechaFin={fechaFin}
         setFechaFin={setFechaFin}
         miniJuegosDisponibles={miniJuegosDisponibles}
+        
+        // Propiedades para visualización por estudiante
+        estudianteSeleccionado={estudianteSeleccionado}
+        
+        // Modo de visualización
+        modoVisualizacion={modoVisualizacion}
       />
 
       {/* Tabla de Datos */}

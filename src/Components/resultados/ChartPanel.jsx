@@ -4,12 +4,12 @@ import BarChartComponent from "./Charts/BarChart";
 import LineChartComponent from "./Charts/LineChart";
 import PieChartComponent from "./Charts/PieChart";
 import ScatterChartComponent from "./Charts/ScatterChart";
-import ChartStats from "./Charts/ChartStats";
+import ChartStats from "./charts/ChartStats";
 import { 
   procesarDatosGraficos, 
   procesarDatosPie,
   procesarDatosDistribucion
-} from "../utils/dataProcessingUtils";
+} from "../../utils/dataProcessingUtils";
 
 /**
  * Panel principal de gráficos que contiene selector y renderiza el gráfico seleccionado
