@@ -3,7 +3,7 @@ import MinijuegosTable from "./MinijuegosTable";
 import MinijuegoForm from "./MinijuegoForm";
 import TematicoForm from "./TematicoForm";
 import DialogosManager from "./DialogosManager";
-import ResultadosTable from "./ResultadosTable";
+import ResultadosTable from "../Components/resultados/ResultadosTable";
 import {
   importarEstudiantes,
   descargarPlantillaEstudiantes
