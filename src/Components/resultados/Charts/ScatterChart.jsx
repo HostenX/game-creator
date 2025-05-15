@@ -103,7 +103,7 @@ export const EstadisticasMinijuego = ({ datos, minijuegoSeleccionado }) => {
 };
 
 /**
- * Función mejorada para generar la curva de tendencia
+ * Función mejorada para generar la curva de tendencia con suavizado adaptativo
  * @param {Array} datos - Puntos de datos para generar la curva
  */
 const generarCurvaTendenciaMejorada = (datos) => {
@@ -163,30 +163,84 @@ const generarCurvaTendenciaMejorada = (datos) => {
     return puntos;
   }
   
-  // Si hay suficiente variación, usar la regresión polinomial (implementada en chartUtils)
-  // Esta parte usaría la generarCurvaTendencia de chartUtils
-  // Por ahora usamos una implementación simplificada
-  const minX = Math.min(...vectorX);
-  const maxX = Math.max(...vectorX);
-  const paso = (maxX - minX) / 50;
+  // Si hay suficiente variación, usamos regresión polinómica pero con mayor suavizado
   
-  // Regresión polinomial simplificada para este ejemplo
-  const puntos = [];
-  for (let i = 0; i <= 50; i++) {
-    const x = minX + i * paso;
-    // Cálculo simple para la demostración - normalmente usaríamos la regresión polinomial
-    let sumY = 0, sumW = 0;
-    
-    // Interpolación con pesos inversamente proporcionales a la distancia
-    for (let j = 0; j < vectorX.length; j++) {
-      const dist = Math.abs(x - vectorX[j]);
-      const peso = dist < 0.001 ? 1000 : 1 / (dist * dist);
-      sumY += vectorY[j] * peso;
-      sumW += peso;
+  // Parámetros para regresión polinómica de segundo grado: y = ax² + bx + c
+  let sumX = 0, sumY = 0, sumX2 = 0, sumX3 = 0, sumX4 = 0, sumXY = 0, sumX2Y = 0;
+  const n = vectorX.length;
+  
+  // Calcular sumas para las ecuaciones normales
+  for (let i = 0; i < n; i++) {
+    const x = vectorX[i];
+    const y = vectorY[i];
+    sumX += x;
+    sumY += y;
+    sumX2 += x * x;
+    sumX3 += x * x * x;
+    sumX4 += x * x * x * x;
+    sumXY += x * y;
+    sumX2Y += x * x * y;
+  }
+  
+  // Resolver el sistema de ecuaciones para encontrar a, b, c en y = ax² + bx + c
+  const det = sumX4 * (sumX2 * n - sumX * sumX) - 
+              sumX3 * (sumX3 * n - sumX * sumX2) + 
+              sumX2 * (sumX3 * sumX - sumX2 * sumX2);
+              
+  if (Math.abs(det) < 1e-10) {
+    // Si el determinante es muy pequeño, caemos a regresión lineal
+    let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+    for (let i = 0; i < n; i++) {
+      sumX += vectorX[i];
+      sumY += vectorY[i];
+      sumXY += vectorX[i] * vectorY[i];
+      sumX2 += vectorX[i] * vectorX[i];
     }
     
-    const y = sumW > 0 ? sumY / sumW : 0;
-    puntos.push({ x, y, tipo: 'curva' });
+    const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const b = (sumY - m * sumX) / n;
+    
+    const minX = Math.min(...vectorX);
+    const maxX = Math.max(...vectorX);
+    const paso = (maxX - minX) / 50;
+    
+    const puntos = [];
+    for (let x = minX; x <= maxX; x += paso) {
+      const y = m * x + b;
+      puntos.push({ x, y, tipo: 'curva' });
+    }
+    
+    return puntos;
+  }
+  
+  // Calcular coeficientes para regresión cuadrática y = ax² + bx + c
+  const a = (sumX2Y * (sumX2 * n - sumX * sumX) - 
+             sumXY * (sumX3 * n - sumX * sumX2) + 
+             sumY * (sumX3 * sumX - sumX2 * sumX2)) / det;
+             
+  const b = (sumX4 * (sumXY * n - sumY * sumX) - 
+             sumX3 * (sumX2Y * n - sumY * sumX2) + 
+             sumX2 * (sumX2Y * sumX - sumXY * sumX2)) / det;
+             
+  const c = (sumX4 * (sumX2 * sumY - sumX * sumXY) - 
+             sumX3 * (sumX3 * sumY - sumX * sumX2Y) + 
+             sumX2Y * (sumX3 * sumX - sumX2 * sumX2)) / det;
+  
+  // Generar puntos para la curva cuadrática suave
+  const minX = Math.min(...vectorX);
+  const maxX = Math.max(...vectorX);
+  const paso = (maxX - minX) / 100; // Más puntos para una curva más suave
+  
+  const puntos = [];
+  for (let i = 0; i <= 100; i++) {
+    const x = minX + i * paso;
+    const y = a * x * x + b * x + c;
+    
+    // Limitar Y al rango de datos originales para evitar valores extremos
+    // con un margen de 10% para suavizar la visualización
+    const yLimitado = Math.max(minY - rangoY * 0.1, Math.min(y, maxY + rangoY * 0.1));
+    
+    puntos.push({ x, y: yLimitado, tipo: 'curva' });
   }
   
   return puntos;
