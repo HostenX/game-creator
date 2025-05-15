@@ -1,6 +1,6 @@
 // src/components/resultados/DataTable.jsx
 import React from "react";
-import { formatFecha, formatTiempo, tipoMinijuego } from "../../utils/formatUtils";
+import { formatFecha, formatTiempo, tipoMinijuego } from "../utils/formatUtils";
 
 /**
  * Componente de tabla de datos para mostrar resultados

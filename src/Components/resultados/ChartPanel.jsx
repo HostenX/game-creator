@@ -9,7 +9,7 @@ import {
   procesarDatosGraficos, 
   procesarDatosPie,
   procesarDatosDistribucion
-} from "../../utils/dataProcessingUtils";
+} from "../utils/dataProcessingUtils";
 
 /**
  * Panel principal de gráficos que contiene selector y renderiza el gráfico seleccionado
