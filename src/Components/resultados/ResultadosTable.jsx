@@ -5,7 +5,7 @@ import FiltersPanel from "./FiltersPanel";
 import ChartPanel from "./ChartPanel";
 import DataTable from "./DataTable";
 import ExportModal from "./ExportModal";
-import { extraerMinijuegosUnicos } from "../tils/dataProcessingUtils";
+import { extraerMinijuegosUnicos } from "../utils/dataProcessingUtils";
 
 /**
  * Componente principal de la tabla de resultados
