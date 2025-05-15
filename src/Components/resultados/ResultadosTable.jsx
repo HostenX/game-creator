@@ -1,11 +1,11 @@
-// src/components/resultados/ResultadosTable.jsx (actualizado)
+// src/components/resultados/ResultadosTable.jsx (corregido)
 import React, { useState, useEffect } from "react";
 import { exportarResultados, obtenerResultados } from "../../Services/apiService";
 import FiltersPanel from "./FiltersPanel";
 import ChartPanel from "./ChartPanel";
 import DataTable from "./DataTable";
 import ExportModal from "./ExportModal";
-import { extraerMinijuegosUnicos } from "../utils/dataProcessingUtils";
+import { extraerMinijuegosUnicos } from "../../utils/dataProcessingUtils";
 
 /**
  * Componente principal de la tabla de resultados
@@ -68,8 +68,16 @@ const ResultadosTable = () => {
       const usuarioIdNum = usuarioId ? parseInt(usuarioId) : null;
       const minijuegoIdNum = minijuegoId ? parseInt(minijuegoId) : null;
 
+      // Si estamos en modo por estudiante y hay un estudiante seleccionado, usamos su ID
+      let usuarioIdFinal = usuarioIdNum;
+      if (modoVisualizacion === "porEstudiante" && estudianteSeleccionado) {
+        usuarioIdFinal = estudianteSeleccionado.id;
+        console.log(`Filtro automático por estudiante: ${estudianteSeleccionado.nombre} (ID: ${usuarioIdFinal})`);
+      }
+
+      // Si estamos en modo por minijuego, podríamos usar su ID, pero lo haremos por filtrado posterior
       const data = await obtenerResultados(
-        usuarioIdNum,
+        usuarioIdFinal,
         minijuegoIdNum,
         curso || null,
         null,
@@ -91,19 +99,25 @@ const ResultadosTable = () => {
         resultadosProcesados = data;
       }
 
+      // Aplicar los filtros adicionales para unificar la experiencia
+      console.log("Resultados recibidos:", resultadosProcesados.length);
+      
+      // Filtro por minijuego si está seleccionado (modo general o porMinijuego)
+      if (minijuegoSeleccionado && (modoVisualizacion === "general" || modoVisualizacion === "porMinijuego")) {
+        console.log(`Filtrando por minijuego: ${minijuegoSeleccionado}`);
+        resultadosProcesados = resultadosProcesados.filter(item => 
+          (item.tituloMinijuego || item.minijuego || "Sin nombre") === minijuegoSeleccionado
+        );
+      }
+
       setResultados(resultadosProcesados);
+      console.log("Resultados finales:", resultadosProcesados.length);
 
       // Extraer lista de minijuegos disponibles
       const uniqueMinijuegos = extraerMinijuegosUnicos(resultadosProcesados);
       setMiniJuegosDisponibles(uniqueMinijuegos);
-      
-      // Reset de selecciones al cargar nuevos datos
-      if (modoVisualizacion === "porMinijuego") {
-        setMinijuegoSeleccionado("");
-      } else if (modoVisualizacion === "porEstudiante") {
-        setEstudianteSeleccionado(null);
-      }
     } catch (err) {
+      console.error("Error al cargar resultados:", err);
       setError("Error al cargar los resultados. Por favor, intenta de nuevo.");
     } finally {
       setLoading(false);
@@ -135,12 +149,14 @@ const ResultadosTable = () => {
   // Manejar cambio en modo de visualización
   const handleModoVisualizacionChange = (nuevoModo) => {
     setModoVisualizacion(nuevoModo);
-    // Limpiar selecciones según corresponda
-    if (nuevoModo !== "porMinijuego") {
-      setMinijuegoSeleccionado("");
-    }
-    if (nuevoModo !== "porEstudiante") {
+    
+    // Solo reseteamos selecciones si cambiamos de modo completamente
+    if (nuevoModo === "general") {
+      // En modo general podemos mantener las selecciones
+    } else if (nuevoModo === "porMinijuego") {
       setEstudianteSeleccionado(null);
+    } else if (nuevoModo === "porEstudiante") {
+      setMinijuegoSeleccionado("");
     }
   };
 

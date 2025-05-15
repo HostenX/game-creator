@@ -44,16 +44,28 @@ const FiltersPanel = ({
       )];
       
       // Extraer estudiantes únicos
-      const estudiantes = [...new Set(
-        resultados.map(item => ({
-          id: item.usuarioId || item.idUsuario,
-          nombre: item.nombreCompleto || item.nombre || "Sin nombre"
-        })).map(JSON.stringify)
-      )].map(JSON.parse)
-      .filter(e => e.id && e.nombre);
+      const estudiantes = [];
+      const estudiantesIds = new Set();
+      
+      resultados.forEach(item => {
+        const id = item.usuarioId || item.idUsuario;
+        const nombre = item.nombreCompleto || item.nombre || "Sin nombre";
+        
+        // Evitar duplicados usando el ID como clave
+        if (id && !estudiantesIds.has(id)) {
+          estudiantesIds.add(id);
+          estudiantes.push({ id, nombre });
+        }
+      });
+      
+      // Ordenar alfabéticamente por nombre
+      estudiantes.sort((a, b) => a.nombre.localeCompare(b.nombre));
       
       setMinijuegosDisponibles(minijuegos);
       setEstudiantesDisponibles(estudiantes);
+      
+      // Depuración
+      console.log("Estudiantes encontrados:", estudiantes);
     }
   }, [resultados]);
 
