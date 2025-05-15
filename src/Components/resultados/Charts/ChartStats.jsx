@@ -1,6 +1,6 @@
 // src/components/resultados/charts/ChartStats.jsx
 import React from "react";
-import { formatTiempo } from "../../../utils/formatUtils";
+import { formatTiempo } from "../../utils/formatUtils";
 
 /**
  * Componente de estadísticas para los gráficos de barras y líneas
