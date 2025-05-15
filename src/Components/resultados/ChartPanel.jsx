@@ -4,11 +4,11 @@ import BarChartComponent from "./Charts/BarChart";
 import LineChartComponent from "./Charts/LineChart";
 import PieChartComponent from "./Charts/PieChart";
 import ScatterChartComponent from "./Charts/ScatterChart";
-import ChartStats from "./charts/ChartStats";
-import { 
-  procesarDatosGraficos, 
+import ChartStats from "./Charts/ChartStats";
+import {
+  procesarDatosGraficos,
   procesarDatosPie,
-  procesarDatosDistribucion
+  procesarDatosDistribucion,
 } from "../utils/dataProcessingUtils";
 
 /**
@@ -16,7 +16,7 @@ import {
  * @param {Object} props - Propiedades del componente
  * @returns {JSX.Element} Panel de gráficos
  */
-const ChartPanel = ({ 
+const ChartPanel = ({
   resultados,
   mostrarGraficos,
   minijuegoSeleccionado,
@@ -24,8 +24,8 @@ const ChartPanel = ({
   fechaInicio,
   setFechaInicio,
   fechaFin,
-  setFechaFin, 
-  miniJuegosDisponibles
+  setFechaFin,
+  miniJuegosDisponibles,
 }) => {
   // Estado para el tipo de gráfico seleccionado
   const [tipoGrafico, setTipoGrafico] = React.useState("barras");
@@ -36,9 +36,9 @@ const ChartPanel = ({
   const datosGraficos = procesarDatosGraficos(resultados);
   const datosPie = procesarDatosPie(resultados);
   const datosDispersion = procesarDatosDistribucion(
-    resultados, 
-    minijuegoSeleccionado, 
-    fechaInicio, 
+    resultados,
+    minijuegoSeleccionado,
+    fechaInicio,
     fechaFin
   );
 
