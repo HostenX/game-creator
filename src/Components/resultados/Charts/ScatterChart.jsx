@@ -11,8 +11,8 @@ import {
   Legend,
 } from "recharts";
 import CustomTooltip from "../../common/CustomTooltip";
-import { generarCurvaTendencia } from "../../../utils/chartUtils";
-import { calcularMediaYDesviacion } from "../../../utils/chartUtils";
+import { generarCurvaTendencia } from "../../utils/chartUtils";
+import { calcularMediaYDesviacion } from "../../utils/chartUtils";
 import { formatTiempo } from "../../../utils/formatUtils";
 
 /**
