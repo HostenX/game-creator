@@ -10,10 +10,10 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import CustomTooltip from "../../common/CustomTooltip";
+import CustomTooltip from "../common/CustomTooltip";
 import { generarCurvaTendencia } from "../../utils/chartUtils";
 import { calcularMediaYDesviacion } from "../../utils/chartUtils";
-import { formatTiempo } from "../../../utils/formatUtils";
+import { formatTiempo } from "../../utils/formatUtils";
 
 /**
  * Componente para filtros de la distribución
