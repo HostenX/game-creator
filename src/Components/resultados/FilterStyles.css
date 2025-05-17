@@ -1,0 +1,248 @@
+/* Estilos específicos para los nuevos filtros */
+:root {
+  --primary-dark: #2a1a4a;     /* Morado muy oscuro */
+  --primary: #3b2468;          /* Morado oscuro base */
+  --primary-light: #4e2a84;    /* Morado medio */
+  --accent: #5e3a99;           /* Morado más claro para acentos */
+  --accent-light: #8458b3;     /* Morado lavanda para elementos específicos */
+  --secondary: #9d65c9;        /* Morado lavanda para contrastes */
+  --text-light: #f4f0ff;       /* Texto claro */
+  --text-dark: #1f1433;        /* Texto oscuro */
+  --warning: #ff4081;          /* Rosa violeta para advertencias */
+  --success: #42f5b3;          /* Verde turquesa para éxitos */
+  --border-radius: 8px;        /* Bordes redondeados */
+  --box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Sombra estándar */
+}
+
+/* Contenedor de filtros */
+.filtros-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.filtros-busqueda, .filtros-graficos {
+  background-color: var(--primary-dark);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.filtros-busqueda h3, .filtros-graficos h3 {
+  color: var(--secondary);
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+  border-bottom: 1px solid var(--accent-light);
+  padding-bottom: 8px;
+}
+
+/* Grupos de filtros */
+.filtro-grupo {
+  margin-bottom: 15px;
+}
+
+.filtro-grupo label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: var(--text-light);
+}
+
+/* Selector de estudiante con búsqueda */
+.estudiante-selector {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.input-with-clear {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-with-clear input {
+  padding: 12px;
+  padding-right: 35px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--primary-light);
+  border-radius: var(--border-radius);
+  color: var(--text-light);
+  font-size: 1rem;
+}
+
+.input-with-clear input:focus {
+  outline: none;
+  border-color: var(--accent-light);
+  box-shadow: 0 0 0 2px rgba(158, 101, 201, 0.3);
+}
+
+.clear-button {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: rgba(244, 240, 255, 0.5);
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.clear-button:hover {
+  color: var(--text-light);
+}
+
+/* Estilos para el dropdown */
+.estudiantes-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  max-height: 250px;
+  overflow-y: auto;
+  background-color: var(--primary);
+  border: 1px solid var(--primary-light);
+  border-radius: 0 0 var(--border-radius) var(--border-radius);
+  z-index: 100;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.estudiante-option {
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.estudiante-option:last-child {
+  border-bottom: none;
+}
+
+.estudiante-option:hover {
+  background-color: var(--accent);
+}
+
+.estudiante-option.selected {
+  background-color: var(--accent-light);
+  font-weight: 600;
+}
+
+.no-resultados {
+  padding: 15px;
+  text-align: center;
+  color: rgba(244, 240, 255, 0.5);
+  font-style: italic;
+}
+
+/* Estilos para los selectores */
+select {
+  padding: 12px;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--primary-light);
+  border-radius: var(--border-radius);
+  color: var(--text-light);
+  font-size: 1rem;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white' width='18px' height='18px'%3e%3cpath d='M7 10l5 5 5-5z'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--accent-light);
+  box-shadow: 0 0 0 2px rgba(158, 101, 201, 0.3);
+}
+
+select option {
+  background-color: var(--primary-dark);
+  color: var(--text-light);
+  padding: 10px;
+}
+
+/* Botones */
+.filtrar-btn, .exportar-btn {
+  padding: 12px 15px;
+  margin-right: 10px;
+  margin-top: 5px;
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filtrar-btn {
+  background-color: var(--accent);
+  color: var(--text-light);
+}
+
+.filtrar-btn:hover {
+  background-color: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.exportar-btn {
+  background-color: var(--secondary);
+  color: var(--text-light);
+}
+
+.exportar-btn:hover {
+  background-color: var(--accent-light);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.graficos-btn {
+  background-color: var(--primary-light);
+  color: var(--text-light);
+  border: none;
+  padding: 12px 15px;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+}
+
+.graficos-btn:hover {
+  background-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.graficos-btn.active {
+  background-color: var(--accent-light);
+  box-shadow: var(--box-shadow);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+  .filtros-container {
+    grid-template-columns: 1fr;
+  }
+  
+  .filtrar-btn, .exportar-btn, .graficos-btn {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 10px;
+  }
+}

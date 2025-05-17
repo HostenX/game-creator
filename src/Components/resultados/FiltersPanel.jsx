@@ -1,25 +1,22 @@
-// src/components/resultados/FiltersPanel.jsx - Versión corregida para los campos reales
-import React, { useState, useEffect } from "react";
+// src/components/resultados/FiltersPanel.jsx - Versión mejorada con búsqueda
+import React, { useState, useEffect, useRef } from "react";
 
 /**
  * Panel de filtros unificado para la tabla de resultados y gráficos
  * @param {Object} props - Propiedades del componente
- * @returns {JSX.Element} Componente de panel de filtros
+ * @returns {JSX.Element} Componente de panel de filtros mejorado
  */
 const FiltersPanel = ({
-  // Propiedades originales
-  usuarioId,
+  // Propiedades de filtrado y visualización
   setUsuarioId,
-  minijuegoId,
   setMinijuegoId,
-  curso,
   setCurso,
   cargarResultados,
   setShowExportModal,
   mostrarGraficos,
   setMostrarGraficos,
   
-  // Nuevas propiedades para listas desplegables
+  // Propiedades para visualización
   resultados,
   minijuegoSeleccionado,
   setMinijuegoSeleccionado,
@@ -28,107 +25,191 @@ const FiltersPanel = ({
   setEstudianteSeleccionado,
   modoVisualizacion,
   setModoVisualizacion,
+  
+  // Cursos disponibles (Si tienes esta información)
+  cursosDisponibles = []
 }) => {
   // Estados locales para las listas desplegables
   const [minijuegosDisponibles, setMinijuegosDisponibles] = useState([]);
   const [estudiantesDisponibles, setEstudiantesDisponibles] = useState([]);
+  const [cursosExtraidos, setCursosExtraidos] = useState([]);
+  
+  // Estados para el selector con búsqueda
+  const [busquedaEstudiante, setBusquedaEstudiante] = useState('');
+  const [mostrarDropdownEstudiantes, setMostrarDropdownEstudiantes] = useState(false);
+  const dropdownRef = useRef(null);
 
-  // Extraer estudiantes directamente de los resultados visibles
+  // Extraer datos de los resultados cuando cargan
   useEffect(() => {
     if (resultados && resultados.length > 0) {
-      console.log("Total de resultados para extraer estudiantes:", resultados.length);
+      console.log("Procesando resultados para extraer datos de filtrado...");
       
       // Extraer minijuegos únicos
       const minijuegos = [...new Set(
         resultados.map(item => 
           item.tituloMinijuego || item.minijuego || "Sin nombre"
         )
-      )];
+      )].sort();
+      
+      // Extraer cursos únicos
+      const cursos = [...new Set(
+        resultados.map(item => item.curso || "").filter(Boolean)
+      )].sort();
       
       // Extraer estudiantes únicos por nombre completo
-      // Creamos un Map usando el nombre completo como clave para evitar duplicados
       const mapEstudiantes = new Map();
       
       resultados.forEach(resultado => {
-        // Usamos el nombre completo como identificador único
         const nombre = resultado.nombreCompleto;
         
-        // Sólo agregamos si tenemos un nombre válido y no lo habíamos agregado antes
         if (nombre && !mapEstudiantes.has(nombre)) {
-          // Usamos el $id como ID para la selección si está disponible
-          const id = resultado.$id || resultado.id || nombre;
+          const id = resultado.usuarioId || resultado.$id || resultado.id || nombre;
           mapEstudiantes.set(nombre, { id, nombre });
         }
       });
       
-      // Convertimos el Map a un array y ordenamos alfabéticamente
+      // Convertir el Map a un array y ordenar alfabéticamente
       const listaEstudiantes = [...mapEstudiantes.values()]
         .sort((a, b) => a.nombre.localeCompare(b.nombre));
       
-      console.log("Estudiantes extraídos:", listaEstudiantes);
-      
       setMinijuegosDisponibles(minijuegos);
+      setCursosExtraidos(cursos);
       setEstudiantesDisponibles(listaEstudiantes);
     }
   }, [resultados]);
   
-  // Aplicar filtros tanto a la tabla como a los gráficos
+  // Cerrar el dropdown cuando se hace clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setMostrarDropdownEstudiantes(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  // Aplicar filtros
   const aplicarFiltros = () => {
     cargarResultados();
   };
   
-  // Manejar cambios en los filtros de dropdown directamente
+  // Filtrar estudiantes según la búsqueda
+  const estudiantesFiltrados = estudiantesDisponibles.filter(
+    estudiante => estudiante.nombre.toLowerCase().includes(busquedaEstudiante.toLowerCase())
+  );
+  
+  // Manejar cambio en selección de minijuego
   const handleMinijuegoChange = (e) => {
     setMinijuegoSeleccionado(e.target.value);
+    setMinijuegoId(e.target.value ? minijuegosDisponibles.indexOf(e.target.value) + 1 : '');
   };
   
-  const handleEstudianteChange = (e) => {
-    const estudianteNombre = e.target.value;
-    if (estudianteNombre) {
-      const estudiante = estudiantesDisponibles.find(e => e.nombre === estudianteNombre);
-      console.log("Estudiante seleccionado:", estudiante);
-      setEstudianteSeleccionado(estudiante);
-      // Actualizamos el valor del campo usuarioId para filtrar por este estudiante
-      setUsuarioId(estudiante.id);
-    } else {
-      setEstudianteSeleccionado(null);
-      setUsuarioId("");
-    }
+  // Manejar cambio en selección de curso
+  const handleCursoChange = (e) => {
+    setCurso(e.target.value);
+  };
+  
+  // Manejar selección de estudiante
+  const handleEstudianteSelect = (estudiante) => {
+    setEstudianteSeleccionado(estudiante);
+    setUsuarioId(estudiante.id);
+    setBusquedaEstudiante('');
+    setMostrarDropdownEstudiantes(false);
+  };
+  
+  // Limpiar selección de estudiante
+  const limpiarEstudianteSeleccionado = () => {
+    setEstudianteSeleccionado(null);
+    setUsuarioId('');
+    setBusquedaEstudiante('');
   };
 
   return (
     <div className="filtros-container">
-      {/* Filtros de búsqueda unificados */}
+      {/* Filtros de búsqueda mejorados */}
       <div className="filtros-busqueda">
         <h3>Filtros de Búsqueda</h3>
+        
+        {/* Selector de estudiante con búsqueda */}
         <div className="filtro-grupo">
-          <label>ID de Usuario:</label>
-          <input
-            type="text"
-            value={usuarioId}
-            onChange={(e) => setUsuarioId(e.target.value)}
-            placeholder="Filtrar por ID de usuario"
-          />
+          <label>Estudiante:</label>
+          <div className="estudiante-selector" ref={dropdownRef}>
+            <div className="input-with-clear">
+              <input
+                type="text"
+                value={estudianteSeleccionado ? estudianteSeleccionado.nombre : busquedaEstudiante}
+                onChange={(e) => {
+                  setBusquedaEstudiante(e.target.value);
+                  setEstudianteSeleccionado(null);
+                  setUsuarioId('');
+                }}
+                onClick={() => setMostrarDropdownEstudiantes(true)}
+                placeholder="Buscar estudiante..."
+              />
+              {(estudianteSeleccionado || busquedaEstudiante) && (
+                <button 
+                  className="clear-button"
+                  onClick={limpiarEstudianteSeleccionado}
+                  title="Limpiar selección"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+            
+            {mostrarDropdownEstudiantes && (
+              <div className="estudiantes-dropdown">
+                {estudiantesFiltrados.length > 0 ? (
+                  estudiantesFiltrados.map((estudiante, index) => (
+                    <div 
+                      key={`estudiante-option-${index}`}
+                      className={`estudiante-option ${estudianteSeleccionado?.id === estudiante.id ? 'selected' : ''}`}
+                      onClick={() => handleEstudianteSelect(estudiante)}
+                    >
+                      {estudiante.nombre}
+                    </div>
+                  ))
+                ) : (
+                  <div className="no-resultados">No se encontraron estudiantes</div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
+        {/* Selector de minijuego */}
         <div className="filtro-grupo">
-          <label>ID de Minijuego:</label>
-          <input
-            type="text"
-            value={minijuegoId}
-            onChange={(e) => setMinijuegoId(e.target.value)}
-            placeholder="Filtrar por ID de minijuego"
-          />
+          <label>Minijuego:</label>
+          <select
+            value={minijuegoSeleccionado}
+            onChange={handleMinijuegoChange}
+          >
+            <option value="">-- Todos los Minijuegos --</option>
+            {minijuegosDisponibles.map((minijuego, index) => (
+              <option key={`minijuego-${index}`} value={minijuego}>
+                {minijuego}
+              </option>
+            ))}
+          </select>
         </div>
 
+        {/* Selector de curso */}
         <div className="filtro-grupo">
           <label>Curso:</label>
-          <input
-            type="text"
-            value={curso}
-            onChange={(e) => setCurso(e.target.value)}
-            placeholder="Filtrar por curso"
-          />
+          <select 
+            onChange={handleCursoChange}
+          >
+            <option value="">-- Todos los Cursos --</option>
+            {cursosExtraidos.map((curso, index) => (
+              <option key={`curso-${index}`} value={curso}>
+                {curso}
+              </option>
+            ))}
+          </select>
         </div>
 
         <button className="filtrar-btn" onClick={aplicarFiltros}>
@@ -162,66 +243,112 @@ const FiltersPanel = ({
                 value={modoVisualizacion} 
                 onChange={(e) => setModoVisualizacion(e.target.value)}
               >
-                <option value="general">General</option>
+                <option value="general">Vista General</option>
                 <option value="porMinijuego">Por Minijuego</option>
                 <option value="porEstudiante">Por Estudiante</option>
               </select>
             </div>
             
-            {(modoVisualizacion === 'porMinijuego' || modoVisualizacion === 'general') && (
-              <div className="filtro-grupo">
-                <label>Minijuego:</label>
-                <select
-                  value={minijuegoSeleccionado}
-                  onChange={handleMinijuegoChange}
-                >
-                  <option value="">-- Todos los Minijuegos --</option>
-                  {minijuegosDisponibles.map((minijuego, index) => (
-                    <option key={`minijuego-${index}`} value={minijuego}>
-                      {minijuego}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            
-            {(modoVisualizacion === 'porEstudiante' || modoVisualizacion === 'general') && (
-              <div className="filtro-grupo">
-                <label>Estudiante:</label>
-                <select
-                  value={estudianteSeleccionado ? estudianteSeleccionado.nombre : ""}
-                  onChange={handleEstudianteChange}
-                >
-                  <option value="">-- Todos los Estudiantes --</option>
-                  {estudiantesDisponibles.length > 0 ? (
-                    estudiantesDisponibles.map((estudiante, index) => (
-                      <option key={`estudiante-${index}`} value={estudiante.nombre}>
-                        {estudiante.nombre}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="" disabled>Cargando estudiantes...</option>
-                  )}
-                </select>
-              </div>
-            )}
-            
-            {/* Botón para aplicar filtros de gráficos */}
+            {/* Botón para actualizar visualización */}
             <button className="filtrar-btn" onClick={aplicarFiltros}>
               Actualizar Visualización
             </button>
-            
-            {/* Información de depuración */}
-            <div className="debug-info" style={{ fontSize: '0.8em', color: '#aaa', marginTop: '10px' }}>
-              {estudiantesDisponibles.length > 0 ? (
-                <p>Estudiantes disponibles: {estudiantesDisponibles.length}</p>
-              ) : (
-                <p>No hay estudiantes disponibles</p>
-              )}
-            </div>
           </>
         )}
       </div>
+      
+      {/* CSS para el componente */}
+      <style jsx>{`
+        .filtros-container {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          margin-bottom: 20px;
+        }
+        
+        .filtros-busqueda, .filtros-graficos {
+          background-color: var(--primary-dark);
+          padding: 15px;
+          border-radius: var(--border-radius);
+          box-shadow: var(--box-shadow);
+        }
+        
+        .filtro-grupo {
+          margin-bottom: 15px;
+        }
+        
+        .filtro-grupo label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: 500;
+        }
+        
+        .estudiante-selector {
+          position: relative;
+        }
+        
+        .input-with-clear {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        
+        .input-with-clear input {
+          padding-right: 30px;
+          width: 100%;
+        }
+        
+        .clear-button {
+          position: absolute;
+          right: 10px;
+          background: none;
+          border: none;
+          color: #ccc;
+          font-size: 18px;
+          cursor: pointer;
+          padding: 0 5px;
+        }
+        
+        .clear-button:hover {
+          color: #fff;
+        }
+        
+        .estudiantes-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          width: 100%;
+          max-height: 200px;
+          overflow-y: auto;
+          background-color: var(--primary);
+          border: 1px solid var(--primary-light);
+          border-radius: 0 0 var(--border-radius) var(--border-radius);
+          z-index: 10;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .estudiante-option {
+          padding: 8px 12px;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+        
+        .estudiante-option:hover, .estudiante-option.selected {
+          background-color: var(--accent);
+        }
+        
+        .no-resultados {
+          padding: 12px;
+          text-align: center;
+          color: #ccc;
+        }
+        
+        @media (max-width: 768px) {
+          .filtros-container {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
     </div>
   );
 };

@@ -1,14 +1,15 @@
-// src/components/resultados/ResultadosTable.jsx - Con depuración mejorada para estudiantes
+// src/components/resultados/ResultadosTable.jsx - Versión actualizada con los nuevos filtros
 import React, { useState, useEffect } from "react";
-import { exportarResultados, obtenerResultados } from "../../Services/apiService";
+import { obtenerResultados, exportarResultados } from "../../Services/apiService";
 import FiltersPanel from "./FiltersPanel";
 import ChartPanel from "./ChartPanel";
 import DataTable from "./DataTable";
 import ExportModal from "./ExportModal";
 import { extraerMinijuegosUnicos } from "../utils/dataProcessingUtils";
+import "./FilterStyles.css"; // Importamos los nuevos estilos
 
 /**
- * Componente principal de la tabla de resultados
+ * Componente principal de la tabla de resultados con filtros mejorados
  * @returns {JSX.Element} Componente de tabla de resultados
  */
 const ResultadosTable = () => {
@@ -17,7 +18,7 @@ const ResultadosTable = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Estados para filtros
+  // Estados para filtros (ahora usamos principalmente selección, no texto)
   const [usuarioId, setUsuarioId] = useState("");
   const [minijuegoId, setMinijuegoId] = useState("");
   const [curso, setCurso] = useState("");
@@ -37,27 +38,12 @@ const ResultadosTable = () => {
   const [fechaFin, setFechaFin] = useState("");
   const [miniJuegosDisponibles, setMiniJuegosDisponibles] = useState([]);
   
-  // Nuevos estados para visualización por estudiante
+  // Estados para visualización por estudiante
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
   const [modoVisualizacion, setModoVisualizacion] = useState("general");
-
-  // Depuración - Revisar los datos de resultados
-  useEffect(() => {
-    if (resultados.length > 0) {
-      // Mostrar los primeros 2 resultados para verificar la estructura
-      console.log("Muestra de resultados (primeros 2):", resultados.slice(0, 2));
-      
-      // Verificar campos de estudiantes
-      const estudiantesCampos = resultados.map(r => ({
-        usuarioId: r.usuarioId,
-        idUsuario: r.idUsuario,
-        nombreCompleto: r.nombreCompleto,
-        nombre: r.nombre
-      })).slice(0, 5);
-      
-      console.log("Campos de estudiantes (muestra):", estudiantesCampos);
-    }
-  }, [resultados]);
+  
+  // Nuevo estado para cursos disponibles
+  const [cursosDisponibles, setCursosDisponibles] = useState([]);
 
   // Obtener creador ID al cargar el componente
   useEffect(() => {
@@ -93,7 +79,6 @@ const ResultadosTable = () => {
         console.log(`Filtro automático por estudiante: ${estudianteSeleccionado.nombre} (ID: ${usuarioIdFinal})`);
       }
 
-      // Si estamos en modo por minijuego, podríamos usar su ID, pero lo haremos por filtrado posterior
       const data = await obtenerResultados(
         usuarioIdFinal,
         minijuegoIdNum,
@@ -107,53 +92,33 @@ const ResultadosTable = () => {
       // Procesar datos según formato recibido
       if (data?.$values) {
         resultadosProcesados = data.$values;
-        console.log("Datos recibidos en formato $values");
       } else if (Array.isArray(data)) {
         resultadosProcesados = data;
-        console.log("Datos recibidos en formato array");
       } else {
         console.warn("Formato de datos desconocido:", data);
         resultadosProcesados = Array.isArray(data) ? data : [];
       }
 
-      // Verificar estructura de los primeros elementos
-      if (resultadosProcesados.length > 0) {
-        console.log("Estructura del primer resultado:", Object.keys(resultadosProcesados[0]));
-        
-        // Verificar campos específicos para estudiantes
-        const camposEstudiante = {
-          usuarioId: resultadosProcesados[0].usuarioId,
-          idUsuario: resultadosProcesados[0].idUsuario,
-          nombreCompleto: resultadosProcesados[0].nombreCompleto,
-          nombre: resultadosProcesados[0].nombre
-        };
-        console.log("Campos de estudiante en primer resultado:", camposEstudiante);
-      }
-
-      // Filtrar por curso si se proporciona
-      if (curso && curso.trim() !== "") {
-        resultadosProcesados = resultadosProcesados.filter((item) =>
-          item.curso?.toLowerCase().includes(curso.toLowerCase())
-        );
-      }
-
-      // Aplicar los filtros adicionales para unificar la experiencia
-      console.log("Resultados recibidos:", resultadosProcesados.length);
-      
-      // Filtro por minijuego si está seleccionado (modo general o porMinijuego)
+      // Filtro por minijuego si está seleccionado
       if (minijuegoSeleccionado && (modoVisualizacion === "general" || modoVisualizacion === "porMinijuego")) {
-        console.log(`Filtrando por minijuego: ${minijuegoSeleccionado}`);
         resultadosProcesados = resultadosProcesados.filter(item => 
           (item.tituloMinijuego || item.minijuego || "Sin nombre") === minijuegoSeleccionado
         );
       }
 
       setResultados(resultadosProcesados);
-      console.log("Resultados finales:", resultadosProcesados.length);
+      console.log("Resultados cargados:", resultadosProcesados.length);
 
       // Extraer lista de minijuegos disponibles
       const uniqueMinijuegos = extraerMinijuegosUnicos(resultadosProcesados);
       setMiniJuegosDisponibles(uniqueMinijuegos);
+      
+      // Extraer cursos disponibles
+      const uniqueCursos = [...new Set(
+        resultadosProcesados.map(item => item.curso || "").filter(Boolean)
+      )].sort();
+      setCursosDisponibles(uniqueCursos);
+      
     } catch (err) {
       console.error("Error al cargar resultados:", err);
       setError("Error al cargar los resultados. Por favor, intenta de nuevo.");
@@ -202,14 +167,11 @@ const ResultadosTable = () => {
     <div className="resultados-container">
       <h2>Resultados de Minijuegos</h2>
 
-      {/* Panel de Filtros Unificado */}
+      {/* Panel de Filtros Mejorado */}
       <FiltersPanel
         // Propiedades para filtros de búsqueda
-        usuarioId={usuarioId}
         setUsuarioId={setUsuarioId}
-        minijuegoId={minijuegoId}
         setMinijuegoId={setMinijuegoId}
-        curso={curso}
         setCurso={setCurso}
         cargarResultados={cargarResultados}
         setShowExportModal={setShowExportModal}
@@ -230,6 +192,9 @@ const ResultadosTable = () => {
         // Propiedades para modo de visualización
         modoVisualizacion={modoVisualizacion}
         setModoVisualizacion={handleModoVisualizacionChange}
+
+        // Nuevas propiedades para cursos
+        cursosDisponibles={cursosDisponibles}
       />
 
       {/* Panel de Gráficos */}
@@ -253,6 +218,9 @@ const ResultadosTable = () => {
         // Modo de visualización
         modoVisualizacion={modoVisualizacion}
       />
+
+      {/* Mensaje de error si existe */}
+      {error && <div className="error-message">{error}</div>}
 
       {/* Tabla de Datos */}
       <DataTable
