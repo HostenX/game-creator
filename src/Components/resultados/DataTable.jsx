@@ -1,16 +1,12 @@
-// src/components/resultados/DataTable.jsx
 import React from "react";
 import { formatFecha, formatTiempo, tipoMinijuego } from "../utils/formatUtils";
 
 /**
  * Componente de tabla de datos para mostrar resultados
- * @param {Object} props - Propiedades del componente
- * @returns {JSX.Element} Tabla de resultados
  */
-const DataTable = ({ resultados, loading, error }) => {
-  // Renderizar fila de resultado
+const DataTable = ({ resultados, loading, error, onReload }) => {
   const renderizarFila = (resultado, index) => (
-    <tr key={`resultado-${resultado.$id || index}`}>
+    <tr key={`resultado-${resultado.$id || resultado.resultadoId || index}`}>
       <td>{resultado.nombreCompleto || "N/A"}</td>
       <td>{resultado.tituloMinijuego || "N/A"}</td>
       <td>
@@ -19,29 +15,44 @@ const DataTable = ({ resultados, loading, error }) => {
           "N/A"}
       </td>
       <td>{resultado.curso || "N/A"}</td>
-      <td>{resultado.puntaje || 0}</td>
+      <td>{resultado.puntaje || resultado.puntajeObtenido || 0}</td>
       <td>{resultado.puntosBase || 0}</td>
       <td>{resultado.penalidadPuntos || 0}</td>
       <td>
         {resultado.tiempoFormateado ||
-          formatTiempo(resultado.tiempoSegundos)}
+          formatTiempo(resultado.tiempoEjecucion || resultado.tiempoSegundos)}
       </td>
       <td>{resultado.fecha || formatFecha(resultado.fechaResultado)}</td>
     </tr>
   );
 
   if (loading) {
-    return <div className="loading">Cargando resultados...</div>;
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+        <p>Cargando resultados...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="error-message">{error}</div>;
+    return (
+      <div className="error-message">
+        <p>{error}</p>
+        <button className="reload-btn" onClick={onReload}>
+          Intentar de nuevo
+        </button>
+      </div>
+    );
   }
 
-  if (resultados.length === 0) {
+  if (!resultados || resultados.length === 0) {
     return (
       <div className="no-resultados">
-        No se encontraron resultados con los filtros aplicados.
+        <p>No se encontraron resultados con los filtros aplicados.</p>
+        <button className="filtrar-btn" onClick={onReload}>
+          Limpiar filtros y cargar todos
+        </button>
       </div>
     );
   }
@@ -73,6 +84,9 @@ const DataTable = ({ resultados, loading, error }) => {
         <p>
           Total de resultados: <strong>{resultados.length}</strong>
         </p>
+        <button className="exportar-btn" onClick={onReload}>
+          Actualizar
+        </button>
       </div>
     </div>
   );

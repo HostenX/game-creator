@@ -1,5 +1,6 @@
-// src/utils/dataProcessingUtils.js - Versión completa actualizada
-import { formatFecha, formatTiempo, tipoMinijuego } from './formatUtils';
+/**
+ * Funciones de utilidad mejoradas para procesar datos en los componentes de resultados
+ */
 
 /**
  * Procesa los datos agrupados por minijuego para gráficos de barras y líneas
@@ -12,9 +13,11 @@ export const procesarDatosGraficos = (resultados) => {
   const datosPorMinijuego = {};
 
   resultados.forEach((resultado) => {
+    // Normalizar el nombre del minijuego (pueden venir de diferentes fuentes)
     const nombreMinijuego = 
       resultado.tituloMinijuego || resultado.minijuego || "Sin nombre";
 
+    // Inicializar estructura si no existe
     if (!datosPorMinijuego[nombreMinijuego]) {
       datosPorMinijuego[nombreMinijuego] = {
         nombre: nombreMinijuego,
@@ -26,19 +29,18 @@ export const procesarDatosGraficos = (resultados) => {
       };
     }
 
+    // Acumular datos
     datosPorMinijuego[nombreMinijuego].intentos += 1;
     datosPorMinijuego[nombreMinijuego].puntajeTotal +=
-      resultado.puntaje || 0;
+      resultado.puntaje || resultado.puntajeObtenido || 0;
     datosPorMinijuego[nombreMinijuego].tiempoTotal +=
-      resultado.tiempoSegundos || 0;
+      resultado.tiempoSegundos || resultado.tiempoEjecucion || 0;
   });
 
   // Calcular promedios
   Object.values(datosPorMinijuego).forEach((item) => {
-    item.puntajePromedio =
-      Math.round((item.puntajeTotal / item.intentos) * 10) / 10;
-    item.tiempoPromedio =
-      Math.round((item.tiempoTotal / item.intentos) * 10) / 10;
+    item.puntajePromedio = Math.round((item.puntajeTotal / item.intentos) * 10) / 10;
+    item.tiempoPromedio = Math.round((item.tiempoTotal / item.intentos) * 10) / 10;
   });
 
   return Object.values(datosPorMinijuego);
@@ -106,12 +108,12 @@ export const procesarDatosDistribucion = (
 
   // Mapear a formato para gráfico de dispersión
   return datosFiltrados.map(resultado => ({
-    x: resultado.tiempoSegundos || 0,
-    y: resultado.puntaje || 0,
-    nombre: resultado.nombreCompleto || resultado.nombre || "N/A",
+    x: resultado.tiempoSegundos || resultado.tiempoEjecucion || 0,
+    y: resultado.puntaje || resultado.puntajeObtenido || 0,
+    nombre: resultado.nombreCompleto || "N/A",
     curso: resultado.curso || "N/A",
-    puntaje: resultado.puntaje || 0,
-    tiempo: resultado.tiempoFormateado || formatTiempo(resultado.tiempoSegundos),
+    puntaje: resultado.puntaje || resultado.puntajeObtenido || 0,
+    tiempo: formatTiempo(resultado.tiempoSegundos || resultado.tiempoEjecucion),
     puntosBase: resultado.puntosBase || 0,
     penalidadPuntos: resultado.penalidadPuntos || 0,
     fecha: formatFecha(resultado.fecha || resultado.fechaResultado),
@@ -131,7 +133,7 @@ export const extraerMinijuegosUnicos = (resultados) => {
     resultados.map(item => 
       item.tituloMinijuego || item.minijuego || "Sin nombre"
     )
-  )];
+  )].sort();
 };
 
 /**
@@ -153,10 +155,9 @@ export const procesarDatosEstudiante = (resultados, estudiante) => {
   // Filtrar resultados por estudiante usando el nombre
   console.log(`Buscando resultados para estudiante: ${estudianteNombre}`);
   const datosEstudiante = resultados.filter(resultado => {
-    // Comparamos por nombre ya que no tenemos ID
+    // Comparamos por nombre ya que no tenemos ID consistente
     const resultadoNombre = resultado.nombreCompleto;
-    const coincide = resultadoNombre === estudianteNombre;
-    return coincide;
+    return resultadoNombre === estudianteNombre;
   });
 
   console.log(`Resultados encontrados para estudiante ${estudianteNombre}: ${datosEstudiante.length}`);
@@ -165,17 +166,52 @@ export const procesarDatosEstudiante = (resultados, estudiante) => {
 
   // Mapear resultados a formato para gráfico de dispersión
   return datosEstudiante.map(resultado => ({
-    x: resultado.tiempoSegundos || 0,
-    y: resultado.puntaje || 0,
+    x: resultado.tiempoSegundos || resultado.tiempoEjecucion || 0,
+    y: resultado.puntaje || resultado.puntajeObtenido || 0,
     nombre: estudianteNombre,
     minijuego: resultado.tituloMinijuego || resultado.minijuego || "Sin nombre",
     curso: resultado.curso || "N/A",
-    puntaje: resultado.puntaje || 0,
-    tiempo: resultado.tiempoFormateado || formatTiempo(resultado.tiempoSegundos),
+    puntaje: resultado.puntaje || resultado.puntajeObtenido || 0,
+    tiempo: formatTiempo(resultado.tiempoSegundos || resultado.tiempoEjecucion),
     puntosBase: resultado.puntosBase || 0,
     penalidadPuntos: resultado.penalidadPuntos || 0,
     fecha: formatFecha(resultado.fecha || resultado.fechaResultado),
     tipo: 'dato'
+  }));
+};
+
+/**
+ * Calcular estadísticas para datos del estudiante
+ * @param {Array} datos - Datos del estudiante
+ * @returns {Array} Estadísticas calculadas
+ */
+export const calcularEstadisticasEstudiante = (datos) => {
+  if (!datos || datos.length === 0) return [];
+
+  // Agrupar por minijuego
+  const porMinijuego = {};
+  
+  datos.forEach(dato => {
+    const minijuego = dato.minijuego;
+    if (!porMinijuego[minijuego]) {
+      porMinijuego[minijuego] = {
+        nombre: minijuego,
+        intentos: 0,
+        puntajeTotal: 0,
+        tiempoTotal: 0
+      };
+    }
+    
+    porMinijuego[minijuego].intentos++;
+    porMinijuego[minijuego].puntajeTotal += dato.y; // puntaje
+    porMinijuego[minijuego].tiempoTotal += dato.x;  // tiempo
+  });
+  
+  // Calcular promedios
+  return Object.values(porMinijuego).map(item => ({
+    ...item,
+    puntajePromedio: Math.round((item.puntajeTotal / item.intentos) * 10) / 10,
+    tiempoPromedio: Math.round((item.tiempoTotal / item.intentos) * 10) / 10
   }));
 };
 
@@ -224,36 +260,36 @@ export const EstudianteTooltip = ({ active, payload }) => {
 };
 
 /**
- * Calcular estadísticas para datos del estudiante
- * @param {Array} datos - Datos del estudiante
- * @returns {Array} Estadísticas calculadas
+ * Formatea tiempo en segundos a formato MM:SS
+ * @param {number} segundos - Tiempo en segundos
+ * @returns {string} Tiempo formateado
  */
-export const calcularEstadisticasEstudiante = (datos) => {
-  if (!datos || datos.length === 0) return [];
+export const formatTiempo = (segundos) => {
+  if (segundos === undefined || segundos === null) return "N/A";
+  const minutos = Math.floor(segundos / 60);
+  const segs = Math.floor(segundos % 60);
+  return `${minutos.toString().padStart(2, "0")}:${segs
+    .toString()
+    .padStart(2, "0")}`;
+};
 
-  // Agrupar por minijuego
-  const porMinijuego = {};
-  
-  datos.forEach(dato => {
-    const minijuego = dato.minijuego;
-    if (!porMinijuego[minijuego]) {
-      porMinijuego[minijuego] = {
-        nombre: minijuego,
-        intentos: 0,
-        puntajeTotal: 0,
-        tiempoTotal: 0
-      };
-    }
-    
-    porMinijuego[minijuego].intentos++;
-    porMinijuego[minijuego].puntajeTotal += dato.y; // puntaje
-    porMinijuego[minijuego].tiempoTotal += dato.x;  // tiempo
-  });
-  
-  // Calcular promedios
-  return Object.values(porMinijuego).map(item => ({
-    ...item,
-    puntajePromedio: Math.round((item.puntajeTotal / item.intentos) * 10) / 10,
-    tiempoPromedio: Math.round((item.tiempoTotal / item.intentos) * 10) / 10
-  }));
+/**
+ * Formatea una fecha a formato local
+ * @param {string} fechaStr - Fecha en formato string
+ * @returns {string} Fecha formateada
+ */
+export const formatFecha = (fechaStr) => {
+  if (!fechaStr) return "N/A";
+  try {
+    const fecha = new Date(fechaStr);
+    return fecha.toLocaleString("es-ES", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch (e) {
+    return "N/A";
+  }
 };

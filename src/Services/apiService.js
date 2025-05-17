@@ -348,27 +348,34 @@ export const exportarResultados = async (
     if (creadorId) params.append("creadorId", creadorId);
     if (nombreCompleto) params.append("nombreCompleto", nombreCompleto);
 
-    const response = await axios.get(
-      `${apiUrl}/api/resultados/exportar/${tipoArchivo}?${params.toString()}`,
-      {
-        responseType: "blob", // Importante para descargar archivos
-      }
-    );
+    const url = `${apiUrl}/api/resultados/exportar/${tipoArchivo}?${params.toString()}`;
+    console.log("URL de exportación:", url);
 
-    const contentDisposition = response.headers["content-disposition"];
+    const response = await fetch(url, {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    // Obtener el blob de la respuesta
+    const blob = await response.blob();
+
+    // Determinar el nombre de archivo
     let filename = `Resultados.${tipoArchivo === "excel" ? "xlsx" : "pdf"}`;
-
-    // Intentar extraer nombre de archivo de content-disposition si está disponible
+    
+    // Intentar extraer nombre de archivo del header Content-Disposition si está disponible
+    const contentDisposition = response.headers.get("content-disposition");
     if (contentDisposition) {
-      const filenameMatch = contentDisposition.match(
-        /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/
-      );
+      const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
       if (filenameMatch && filenameMatch[1]) {
         filename = filenameMatch[1].replace(/['"]/g, "");
       }
     }
 
-    const url = window.URL.createObjectURL(new Blob([response.data]));
+    // Crear URL para el blob y descargar
+    const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.setAttribute("download", filename);
@@ -376,6 +383,8 @@ export const exportarResultados = async (
     link.click();
     link.remove();
     window.URL.revokeObjectURL(url);
+    
+    return { success: true };
   } catch (error) {
     console.error("Error al exportar resultados:", error);
     throw error;
@@ -560,8 +569,8 @@ export const createTematico = async (tematicoData) => {
 
 export const obtenerResultados = async (
   usuarioId = null,
-  minijuegoId = null,
   curso = null,
+  minijuegoId = null,
   tipoMinijuego = null,
   creadorId = null,
   nombreCompleto = null
@@ -573,14 +582,14 @@ export const obtenerResultados = async (
     if (usuarioId) url += `usuarioId=${encodeURIComponent(usuarioId)}&`;
     if (curso) url += `curso=${encodeURIComponent(curso)}&`;
     if (minijuegoId) url += `minijuegoId=${encodeURIComponent(minijuegoId)}&`;
-    if (tipoMinijuego)
-      url += `tipoMinijuego=${encodeURIComponent(tipoMinijuego)}&`;
+    if (tipoMinijuego) url += `tipoMinijuego=${encodeURIComponent(tipoMinijuego)}&`;
     if (creadorId) url += `creadorId=${encodeURIComponent(creadorId)}&`;
-    if (nombreCompleto)
-      url += `nombreCompleto=${encodeURIComponent(nombreCompleto)}&`;
+    if (nombreCompleto) url += `nombreCompleto=${encodeURIComponent(nombreCompleto)}&`;
 
     // Eliminar el último '&' si existe
     url = url.endsWith("&") ? url.slice(0, -1) : url;
+
+    console.log("URL de solicitud:", url);
 
     const response = await fetch(url, {
       method: "GET",

@@ -1,4 +1,3 @@
-// src/components/resultados/ResultadosTable.jsx - Versión actualizada con filtro por nombre
 import React, { useState, useEffect } from "react";
 import { obtenerResultados, exportarResultados } from "../../Services/apiService";
 import FiltersPanel from "./FiltersPanel";
@@ -10,30 +9,32 @@ import "./FilterStyles.css"; // Importamos los estilos
 
 /**
  * Componente principal de la tabla de resultados con filtros mejorados
- * @returns {JSX.Element} Componente de tabla de resultados
+ * que se integra correctamente con los endpoints de la API
  */
 const ResultadosTable = () => {
-  // Estados para filtros y datos
+  // Estados para datos de resultados
   const [resultados, setResultados] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Estados para filtros (ahora usamos principalmente selección, no texto)
+  // Estados para filtros según la API
   const [usuarioId, setUsuarioId] = useState("");
   const [minijuegoId, setMinijuegoId] = useState("");
   const [curso, setCurso] = useState("");
-  const [nombreCompleto, setNombreCompleto] = useState(""); // Nuevo estado para filtrar por nombre
+  const [nombreCompleto, setNombreCompleto] = useState("");
+  const [tipoMinijuego, setTipoMinijuego] = useState("");
   
   // Estado para modal de exportación
   const [showExportModal, setShowExportModal] = useState(false);
   
   // Estados para visualización de gráficos
   const [mostrarGraficos, setMostrarGraficos] = useState(false);
+  const [reload, setReload] = useState(false);
   
   // Estado para ID del creador (profesor)
   const [creadorId, setCreadorId] = useState(null);
 
-  // Estados para distribución normal
+  // Estados para distribución en gráficos
   const [minijuegoSeleccionado, setMinijuegoSeleccionado] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
@@ -43,8 +44,9 @@ const ResultadosTable = () => {
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
   const [modoVisualizacion, setModoVisualizacion] = useState("general");
   
-  // Nuevo estado para cursos disponibles
+  // Estados para opciones de filtrado
   const [cursosDisponibles, setCursosDisponibles] = useState([]);
+  const [tiposMinijuegoDisponibles, setTiposMinijuegoDisponibles] = useState([]);
 
   // Obtener creador ID al cargar el componente
   useEffect(() => {
@@ -55,7 +57,7 @@ const ResultadosTable = () => {
         if (userData?.id) setCreadorId(userData.id);
       }
     } catch (err) {
-      console.log("Usuario Creador No encontrado");
+      console.error("Error al obtener usuario creador:", err);
     }
   }, []);
 
@@ -64,35 +66,34 @@ const ResultadosTable = () => {
     if (creadorId !== null) {
       cargarResultados();
     }
-  }, [creadorId]);
+  }, [creadorId, reload]);
 
   // Función para cargar resultados desde la API
   const cargarResultados = async () => {
     setLoading(true);
     try {
-      // Si estamos en modo por estudiante y hay un estudiante seleccionado, usamos su nombre
+      // Preparar parámetros para alinearse con la API
       let nombreCompletoFinal = null;
       
       if (modoVisualizacion === "porEstudiante" && estudianteSeleccionado) {
         nombreCompletoFinal = estudianteSeleccionado.nombre;
-        console.log(`Filtro por estudiante: ${nombreCompletoFinal}`);
       } else if (nombreCompleto) {
         nombreCompletoFinal = nombreCompleto;
-        console.log(`Filtro por nombre: ${nombreCompletoFinal}`);
       }
 
+      // Alineación exacta con los parámetros de la API
       const data = await obtenerResultados(
-        null, // No usamos ID, solo nombre
-        minijuegoId ? parseInt(minijuegoId) : null,
+        usuarioId ? parseInt(usuarioId) : null,
         curso || null,
-        null,
+        minijuegoId ? minijuegoId : null,
+        tipoMinijuego || null,
         creadorId,
-        nombreCompletoFinal // Pasamos el nombre completo a la API
+        nombreCompletoFinal
       );
 
+      // Procesamiento de la respuesta
       let resultadosProcesados = [];
 
-      // Procesar datos según formato recibido
       if (data?.$values) {
         resultadosProcesados = data.$values;
       } else if (Array.isArray(data)) {
@@ -102,19 +103,18 @@ const ResultadosTable = () => {
         resultadosProcesados = Array.isArray(data) ? data : [];
       }
 
-      // Filtro por minijuego si está seleccionado
-      if (minijuegoSeleccionado && (modoVisualizacion === "general" || modoVisualizacion === "porMinijuego")) {
-        resultadosProcesados = resultadosProcesados.filter(item => 
-          (item.tituloMinijuego || item.minijuego || "Sin nombre") === minijuegoSeleccionado
-        );
-      }
-
       setResultados(resultadosProcesados);
       console.log("Resultados cargados:", resultadosProcesados.length);
 
-      // Extraer lista de minijuegos disponibles
+      // Extraer datos para opciones de filtrado
       const uniqueMinijuegos = extraerMinijuegosUnicos(resultadosProcesados);
       setMiniJuegosDisponibles(uniqueMinijuegos);
+      
+      // Extraer tipos de minijuego disponibles
+      const uniqueTipos = [...new Set(
+        resultadosProcesados.map(item => item.tipoMinijuego || "").filter(Boolean)
+      )].sort();
+      setTiposMinijuegoDisponibles(uniqueTipos);
       
       // Extraer cursos disponibles
       const uniqueCursos = [...new Set(
@@ -133,7 +133,7 @@ const ResultadosTable = () => {
   // Función para exportar resultados
   const handleExport = async (tipoArchivo) => {
     try {
-      // Si tenemos un estudiante seleccionado, usamos su nombre
+      // Preparar el nombre para filtrar por estudiante
       let nombreCompletoFinal = null;
       
       if (estudianteSeleccionado) {
@@ -142,21 +142,20 @@ const ResultadosTable = () => {
         nombreCompletoFinal = nombreCompleto;
       }
 
-      // También pasamos el nombre completo para la exportación
+      // Alineación con los parámetros de la API para exportación
       await exportarResultados(
         tipoArchivo,
-        null, // No usamos ID, solo nombre
-        minijuegoId ? parseInt(minijuegoId) : null,
+        usuarioId ? parseInt(usuarioId) : null,
+        minijuegoId ? minijuegoId : null,
         curso || null,
-        null,
+        tipoMinijuego || null,
         creadorId,
         nombreCompletoFinal
       );
       setShowExportModal(false);
     } catch (error) {
-      setError(
-        "Error al exportar los resultados. Por favor, intenta de nuevo."
-      );
+      console.error("Error al exportar:", error);
+      setError("Error al exportar los resultados. Por favor, intenta de nuevo.");
     }
   };
   
@@ -164,29 +163,38 @@ const ResultadosTable = () => {
   const handleModoVisualizacionChange = (nuevoModo) => {
     setModoVisualizacion(nuevoModo);
     
-    // Solo reseteamos selecciones si cambiamos de modo completamente
+    // Resetear filtros según el modo
     if (nuevoModo === "general") {
-      // En modo general podemos mantener las selecciones
+      // En modo general mantenemos las selecciones
     } else if (nuevoModo === "porMinijuego") {
       setEstudianteSeleccionado(null);
-      setNombreCompleto(""); // Limpiar el filtro por nombre
+      setNombreCompleto("");
+      setUsuarioId("");
     } else if (nuevoModo === "porEstudiante") {
       setMinijuegoSeleccionado("");
+      setMinijuegoId("");
     }
+  };
+
+  // Forzar recarga de datos
+  const recargarDatos = () => {
+    setReload(!reload);
   };
 
   return (
     <div className="resultados-container">
       <h2>Resultados de Minijuegos</h2>
-
+      
       {/* Panel de Filtros Mejorado */}
       <FiltersPanel
         // Propiedades para filtros de búsqueda
         setUsuarioId={setUsuarioId}
         setMinijuegoId={setMinijuegoId}
         setCurso={setCurso}
-        setNombreCompleto={setNombreCompleto} // Nueva prop para pasar el setter
-        nombreCompleto={nombreCompleto} // Nueva prop para pasar el valor actual
+        setNombreCompleto={setNombreCompleto}
+        nombreCompleto={nombreCompleto}
+        setTipoMinijuego={setTipoMinijuego}
+        tipoMinijuego={tipoMinijuego}
         cargarResultados={cargarResultados}
         setShowExportModal={setShowExportModal}
         
@@ -207,8 +215,10 @@ const ResultadosTable = () => {
         modoVisualizacion={modoVisualizacion}
         setModoVisualizacion={handleModoVisualizacionChange}
 
-        // Propiedades para cursos
+        // Listas de opciones para filtros
+        minijuegosDisponibles={miniJuegosDisponibles}
         cursosDisponibles={cursosDisponibles}
+        tiposMinijuegoDisponibles={tiposMinijuegoDisponibles}
       />
 
       {/* Panel de Gráficos */}
@@ -241,6 +251,7 @@ const ResultadosTable = () => {
         resultados={resultados}
         loading={loading}
         error={error}
+        onReload={recargarDatos}
       />
 
       {/* Modal de Exportación */}

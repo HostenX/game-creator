@@ -1,24 +1,25 @@
-// src/components/resultados/FiltersPanel.jsx - Versión actualizada con búsqueda por nombre
 import React, { useState, useEffect, useRef } from "react";
 
 /**
  * Panel de filtros unificado para la tabla de resultados y gráficos
- * @param {Object} props - Propiedades del componente
- * @returns {JSX.Element} Componente de panel de filtros mejorado
  */
 const FiltersPanel = ({
-  // Propiedades de filtrado y visualización
+  // Propiedades para filtros de búsqueda
   setUsuarioId,
   setMinijuegoId,
   setCurso,
-  setNombreCompleto,  // Nuevo prop para setter del nombre
-  nombreCompleto,     // Nuevo prop para valor actual del nombre
+  setNombreCompleto,
+  nombreCompleto,
+  setTipoMinijuego,
+  tipoMinijuego,
   cargarResultados,
   setShowExportModal,
+  
+  // Propiedades para visualización
   mostrarGraficos,
   setMostrarGraficos,
   
-  // Propiedades para visualización
+  // Datos para opciones de selección
   resultados,
   minijuegoSeleccionado,
   setMinijuegoSeleccionado,
@@ -28,20 +29,22 @@ const FiltersPanel = ({
   modoVisualizacion,
   setModoVisualizacion,
   
-  // Cursos disponibles (Si tienes esta información)
-  cursosDisponibles = []
+  // Listas de opciones disponibles
+  minijuegosDisponibles = [],
+  cursosDisponibles = [],
+  tiposMinijuegoDisponibles = []
 }) => {
-  // Estados locales para las listas desplegables
-  const [minijuegosDisponibles, setMinijuegosDisponibles] = useState([]);
+  // Estados locales para listas que se extraen de los resultados
   const [estudiantesDisponibles, setEstudiantesDisponibles] = useState([]);
   const [cursosExtraidos, setCursosExtraidos] = useState([]);
+  const [tiposExtraidos, setTiposExtraidos] = useState([]);
   
-  // Estados para el selector con búsqueda
+  // Estados para el selector con búsqueda de estudiantes
   const [busquedaEstudiante, setBusquedaEstudiante] = useState('');
   const [mostrarDropdownEstudiantes, setMostrarDropdownEstudiantes] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Extraer datos de los resultados cuando cargan
+  // Extraer datos de los resultados cuando cargan para utilizarlos en los filtros
   useEffect(() => {
     if (resultados && resultados.length > 0) {
       console.log("Procesando resultados para extraer datos de filtrado...");
@@ -56,6 +59,11 @@ const FiltersPanel = ({
       // Extraer cursos únicos
       const cursos = [...new Set(
         resultados.map(item => item.curso || "").filter(Boolean)
+      )].sort();
+      
+      // Extraer tipos de minijuego únicos
+      const tipos = [...new Set(
+        resultados.map(item => item.tipoMinijuego || "").filter(Boolean)
       )].sort();
       
       // Extraer estudiantes únicos por nombre completo
@@ -74,9 +82,9 @@ const FiltersPanel = ({
       const listaEstudiantes = [...mapEstudiantes.values()]
         .sort((a, b) => a.nombre.localeCompare(b.nombre));
       
-      setMinijuegosDisponibles(minijuegos);
-      setCursosExtraidos(cursos);
       setEstudiantesDisponibles(listaEstudiantes);
+      setCursosExtraidos(cursos);
+      setTiposExtraidos(tipos);
     }
   }, [resultados]);
   
@@ -94,7 +102,7 @@ const FiltersPanel = ({
     };
   }, []);
   
-  // Aplicar filtros
+  // Aplicar filtros al hacer clic en el botón
   const aplicarFiltros = () => {
     cargarResultados();
   };
@@ -106,8 +114,14 @@ const FiltersPanel = ({
   
   // Manejar cambio en selección de minijuego
   const handleMinijuegoChange = (e) => {
-    setMinijuegoSeleccionado(e.target.value);
-    setMinijuegoId(e.target.value ? minijuegosDisponibles.indexOf(e.target.value) + 1 : '');
+    const valor = e.target.value;
+    setMinijuegoSeleccionado(valor);
+    setMinijuegoId(valor ? valor : '');
+  };
+  
+  // Manejar cambio en selección de tipo de minijuego
+  const handleTipoMinijuegoChange = (e) => {
+    setTipoMinijuego(e.target.value);
   };
   
   // Manejar cambio en selección de curso
@@ -118,9 +132,9 @@ const FiltersPanel = ({
   // Manejar selección de estudiante
   const handleEstudianteSelect = (estudiante) => {
     setEstudianteSeleccionado(estudiante);
-    setUsuarioId(''); // Ya no usamos ID, usamos nombre
+    setUsuarioId(estudiante.id || ''); // Si hay ID, lo usamos
     setBusquedaEstudiante('');
-    setNombreCompleto(estudiante.nombre); // Este es el cambio importante - usar nombre en vez de ID
+    setNombreCompleto(estudiante.nombre); // Siempre establecemos el nombre
     setMostrarDropdownEstudiantes(false);
   };
   
@@ -129,12 +143,12 @@ const FiltersPanel = ({
     setEstudianteSeleccionado(null);
     setUsuarioId('');
     setBusquedaEstudiante('');
-    setNombreCompleto(''); // Limpiar también el filtro por nombre
+    setNombreCompleto('');
   };
 
   return (
     <div className="filtros-container">
-      {/* Filtros de búsqueda mejorados */}
+      {/* Filtros de búsqueda */}
       <div className="filtros-busqueda">
         <h3>Filtros de Búsqueda</h3>
         
@@ -150,7 +164,7 @@ const FiltersPanel = ({
                   setBusquedaEstudiante(e.target.value);
                   setEstudianteSeleccionado(null);
                   setUsuarioId('');
-                  setNombreCompleto(''); // Limpiamos el filtro de nombre al buscar
+                  setNombreCompleto('');
                 }}
                 onClick={() => setMostrarDropdownEstudiantes(true)}
                 placeholder="Buscar por nombre completo..."
@@ -201,13 +215,29 @@ const FiltersPanel = ({
             ))}
           </select>
         </div>
+        
+        {/* Selector de tipo de minijuego - Nuevo */}
+        <div className="filtro-grupo">
+          <label>Tipo de Minijuego:</label>
+          <select 
+            value={tipoMinijuego || ""}
+            onChange={handleTipoMinijuegoChange}
+          >
+            <option value="">-- Todos los Tipos --</option>
+            {tiposExtraidos.map((tipo, index) => (
+              <option key={`tipo-${index}`} value={tipo}>
+                {tipo}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Selector de curso */}
         <div className="filtro-grupo">
           <label>Curso:</label>
           <select 
             value={curso || ""}
-            onChange={(e) => setCurso(e.target.value)}
+            onChange={handleCursoChange}
           >
             <option value="">-- Todos los Cursos --</option>
             {cursosExtraidos.map((curso, index) => (
@@ -218,6 +248,7 @@ const FiltersPanel = ({
           </select>
         </div>
 
+        {/* Botones de acción */}
         <button className="filtrar-btn" onClick={aplicarFiltros}>
           Aplicar Filtros
         </button>
