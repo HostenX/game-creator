@@ -8,6 +8,7 @@ const FiltersPanel = ({
   setUsuarioId,
   setMinijuegoId,
   setCurso,
+  curso, // Añadir esta prop - era la que faltaba
   setNombreCompleto,
   nombreCompleto,
   setTipoMinijuego,
@@ -236,13 +237,13 @@ const FiltersPanel = ({
         <div className="filtro-grupo">
           <label>Curso:</label>
           <select 
-            value={curso || ""}
+            value={curso || ""} // Usar la prop curso aquí
             onChange={handleCursoChange}
           >
             <option value="">-- Todos los Cursos --</option>
-            {cursosExtraidos.map((curso, index) => (
-              <option key={`curso-${index}`} value={curso}>
-                {curso}
+            {cursosExtraidos.map((cursoOption, index) => (
+              <option key={`curso-${index}`} value={cursoOption}>
+                {cursoOption}
               </option>
             ))}
           </select>

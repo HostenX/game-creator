@@ -191,6 +191,7 @@ const ResultadosTable = () => {
         setUsuarioId={setUsuarioId}
         setMinijuegoId={setMinijuegoId}
         setCurso={setCurso}
+        curso={curso} {/* Pasar la prop curso para evitar el error */}
         setNombreCompleto={setNombreCompleto}
         nombreCompleto={nombreCompleto}
         setTipoMinijuego={setTipoMinijuego}
