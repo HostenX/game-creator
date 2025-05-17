@@ -176,13 +176,15 @@ const ResultadosTable = () => {
     }
   };
 
-  // Función para exportar resultados
+  // Función para exportar resultados con filtros aplicados
   const handleExport = async (tipoArchivo) => {
     try {
-      // Preparar el nombre para filtrar por estudiante
+      setLoading(true);
+      
+      // Obtener el nombre completo para filtrar según el modo de visualización actual
       let nombreCompletoFinal = null;
       
-      if (estudianteSeleccionado) {
+      if (modoVisualizacion === "porEstudiante" && estudianteSeleccionado) {
         nombreCompletoFinal = estudianteSeleccionado.nombre;
       } else if (nombreCompleto) {
         nombreCompletoFinal = nombreCompleto;
@@ -198,10 +200,13 @@ const ResultadosTable = () => {
         creadorId,
         nombreCompletoFinal
       );
+      
       setShowExportModal(false);
     } catch (error) {
       console.error("Error al exportar:", error);
       setError("Error al exportar los resultados. Por favor, intenta de nuevo.");
+    } finally {
+      setLoading(false);
     }
   };
   
@@ -235,6 +240,19 @@ const ResultadosTable = () => {
     
     // Recargar datos
     setReload(!reload);
+  };
+
+  // Reunir todos los filtros actuales en un objeto
+  const obtenerFiltrosActuales = () => {
+    return {
+      usuarioId: usuarioId || null,
+      minijuegoId: minijuegoId || null,
+      nombreCompleto: nombreCompleto || (estudianteSeleccionado ? estudianteSeleccionado.nombre : null),
+      curso: curso || null,
+      tipoMinijuego: tipoMinijuego || null,
+      creadorId: creadorId || null,
+      minijuegoSeleccionado: minijuegoSeleccionado || null
+    };
   };
 
   return (
@@ -311,11 +329,12 @@ const ResultadosTable = () => {
         onReload={recargarDatos}
       />
 
-      {/* Modal de Exportación */}
+      {/* Modal de Exportación Mejorado */}
       <ExportModal
         show={showExportModal}
         onClose={() => setShowExportModal(false)}
         onExport={handleExport}
+        filtrosActuales={obtenerFiltrosActuales()}
       />
     </div>
   );

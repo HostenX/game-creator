@@ -338,9 +338,10 @@ export const exportarResultados = async (
   nombreCompleto = null
 ) => {
   try {
+    // Preparamos los parámetros de la URL con todos los filtros aplicados
     const params = new URLSearchParams();
 
-    params.append("tipoArchivo", tipoArchivo);
+    // Añadir todos los filtros como parámetros de consulta
     if (usuarioId) params.append("usuarioId", usuarioId);
     if (minijuegoId) params.append("minijuegoId", minijuegoId);
     if (curso) params.append("curso", curso);
@@ -348,11 +349,16 @@ export const exportarResultados = async (
     if (creadorId) params.append("creadorId", creadorId);
     if (nombreCompleto) params.append("nombreCompleto", nombreCompleto);
 
+    // Construir la URL completa
     const apiEndpoint = `${apiUrl}/api/resultados/exportar/${tipoArchivo}?${params.toString()}`;
     console.log("URL de exportación:", apiEndpoint);
 
+    // Iniciar la descarga del archivo
     const response = await fetch(apiEndpoint, {
       method: "GET",
+      headers: {
+        // Añadir autenticación u otros headers necesarios aquí
+      }
     });
 
     if (!response.ok) {
@@ -363,7 +369,7 @@ export const exportarResultados = async (
     const blob = await response.blob();
 
     // Determinar el nombre de archivo
-    let filename = `Resultados.${tipoArchivo === "excel" ? "xlsx" : "pdf"}`;
+    let filename = `Resultados_${new Date().toISOString().slice(0, 10)}.${tipoArchivo === "excel" ? "xlsx" : "pdf"}`;
     
     // Intentar extraer nombre de archivo del header Content-Disposition si está disponible
     const contentDisposition = response.headers.get("content-disposition");

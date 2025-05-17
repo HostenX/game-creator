@@ -1,9 +1,14 @@
 import React from "react";
 
 /**
- * Modal mejorado para exportar resultados
+ * Modal mejorado para exportar resultados con filtros aplicados
+ * @param {Object} props - Propiedades del componente
+ * @param {boolean} props.show - Muestra u oculta el modal
+ * @param {Function} props.onClose - Función para cerrar el modal
+ * @param {Function} props.onExport - Función para exportar con los parámetros adecuados
+ * @param {Object} props.filtrosActuales - Filtros actuales aplicados
  */
-const ExportModal = ({ show, onClose, onExport }) => {
+const ExportModal = ({ show, onClose, onExport, filtrosActuales }) => {
   if (!show) return null;
 
   return (
@@ -12,9 +17,24 @@ const ExportModal = ({ show, onClose, onExport }) => {
         <h2>Exportar Resultados</h2>
         
         <p>
-          Se exportarán los resultados con los filtros actuales aplicados.
+          Se exportarán los resultados con los siguientes filtros aplicados:
         </p>
         
+        <div className="filtros-resumen">
+          {filtrosActuales.nombreCompleto && (
+            <p><strong>Estudiante:</strong> {filtrosActuales.nombreCompleto}</p>
+          )}
+          {filtrosActuales.minijuegoId && (
+            <p><strong>Minijuego:</strong> {filtrosActuales.minijuegoId}</p>
+          )}
+          {filtrosActuales.curso && (
+            <p><strong>Curso:</strong> {filtrosActuales.curso}</p>
+          )}
+          {filtrosActuales.tipoMinijuego && (
+            <p><strong>Tipo:</strong> {filtrosActuales.tipoMinijuego}</p>
+          )}
+        </div>
+
         <div className="export-info">
           <p>Selecciona el formato para la exportación:</p>
           
@@ -39,14 +59,14 @@ const ExportModal = ({ show, onClose, onExport }) => {
 
         <div className="modal-buttons">
           <button 
-            onClick={() => onExport("excel")}
+            onClick={() => onExport("excel", filtrosActuales)}
             className="export-excel-btn"
           >
             Exportar a Excel
           </button>
           
           <button 
-            onClick={() => onExport("pdf")}
+            onClick={() => onExport("pdf", filtrosActuales)}
             className="export-pdf-btn"
           >
             Exportar a PDF
