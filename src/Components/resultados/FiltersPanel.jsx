@@ -118,19 +118,10 @@ const FiltersPanel = ({
   // Manejar selección de estudiante
   const handleEstudianteSelect = (estudiante) => {
     setEstudianteSeleccionado(estudiante);
-    setUsuarioId(estudiante.id);
+    setUsuarioId(''); // Ya no usamos ID, usamos nombre
     setBusquedaEstudiante('');
-    setNombreCompleto(estudiante.nombre); // Sincronizar con el filtro por nombre
+    setNombreCompleto(estudiante.nombre); // Este es el cambio importante - usar nombre en vez de ID
     setMostrarDropdownEstudiantes(false);
-  };
-  
-  // Manejar cambio en campo de búsqueda por nombre
-  const handleNombreCompletoChange = (e) => {
-    setNombreCompleto(e.target.value);
-    // Si estamos escribiendo, resetear la selección de estudiante específico
-    if (estudianteSeleccionado) {
-      setEstudianteSeleccionado(null);
-    }
   };
   
   // Limpiar selección de estudiante
@@ -149,28 +140,7 @@ const FiltersPanel = ({
         
         {/* Selector de estudiante con búsqueda */}
         <div className="filtro-grupo">
-          <label>Estudiante por nombre:</label>
-          <input
-            type="text"
-            value={nombreCompleto}
-            onChange={handleNombreCompletoChange}
-            placeholder="Buscar por nombre completo..."
-            className="input-with-clear"
-          />
-          {nombreCompleto && (
-            <button 
-              className="clear-button"
-              onClick={() => setNombreCompleto('')}
-              title="Limpiar búsqueda por nombre"
-            >
-              ×
-            </button>
-          )}
-        </div>
-
-        {/* Búsqueda avanzada con selector de estudiante */}
-        <div className="filtro-grupo">
-          <label>Buscar estudiante específico:</label>
+          <label>Buscar estudiante por nombre:</label>
           <div className="estudiante-selector" ref={dropdownRef}>
             <div className="input-with-clear">
               <input
@@ -180,9 +150,10 @@ const FiltersPanel = ({
                   setBusquedaEstudiante(e.target.value);
                   setEstudianteSeleccionado(null);
                   setUsuarioId('');
+                  setNombreCompleto(''); // Limpiamos el filtro de nombre al buscar
                 }}
                 onClick={() => setMostrarDropdownEstudiantes(true)}
-                placeholder="Seleccionar estudiante..."
+                placeholder="Buscar por nombre completo..."
               />
               {(estudianteSeleccionado || busquedaEstudiante) && (
                 <button 
@@ -235,7 +206,8 @@ const FiltersPanel = ({
         <div className="filtro-grupo">
           <label>Curso:</label>
           <select 
-            onChange={handleCursoChange}
+            value={curso || ""}
+            onChange={(e) => setCurso(e.target.value)}
           >
             <option value="">-- Todos los Cursos --</option>
             {cursosExtraidos.map((curso, index) => (

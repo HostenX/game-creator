@@ -1,4 +1,4 @@
-// src/components/resultados/ResultadosTable.jsx - Versión actualizada con los nuevos filtros
+// src/components/resultados/ResultadosTable.jsx - Versión actualizada con filtro por nombre
 import React, { useState, useEffect } from "react";
 import { obtenerResultados, exportarResultados } from "../../Services/apiService";
 import FiltersPanel from "./FiltersPanel";
@@ -6,7 +6,7 @@ import ChartPanel from "./ChartPanel";
 import DataTable from "./DataTable";
 import ExportModal from "./ExportModal";
 import { extraerMinijuegosUnicos } from "../utils/dataProcessingUtils";
-import "./FilterStyles.css"; // Importamos los nuevos estilos
+import "./FilterStyles.css"; // Importamos los estilos
 
 /**
  * Componente principal de la tabla de resultados con filtros mejorados
@@ -22,6 +22,7 @@ const ResultadosTable = () => {
   const [usuarioId, setUsuarioId] = useState("");
   const [minijuegoId, setMinijuegoId] = useState("");
   const [curso, setCurso] = useState("");
+  const [nombreCompleto, setNombreCompleto] = useState(""); // Nuevo estado para filtrar por nombre
   
   // Estado para modal de exportación
   const [showExportModal, setShowExportModal] = useState(false);
@@ -69,22 +70,24 @@ const ResultadosTable = () => {
   const cargarResultados = async () => {
     setLoading(true);
     try {
-      const usuarioIdNum = usuarioId ? parseInt(usuarioId) : null;
-      const minijuegoIdNum = minijuegoId ? parseInt(minijuegoId) : null;
-
-      // Si estamos en modo por estudiante y hay un estudiante seleccionado, usamos su ID
-      let usuarioIdFinal = usuarioIdNum;
+      // Si estamos en modo por estudiante y hay un estudiante seleccionado, usamos su nombre
+      let nombreCompletoFinal = null;
+      
       if (modoVisualizacion === "porEstudiante" && estudianteSeleccionado) {
-        usuarioIdFinal = estudianteSeleccionado.id;
-        console.log(`Filtro automático por estudiante: ${estudianteSeleccionado.nombre} (ID: ${usuarioIdFinal})`);
+        nombreCompletoFinal = estudianteSeleccionado.nombre;
+        console.log(`Filtro por estudiante: ${nombreCompletoFinal}`);
+      } else if (nombreCompleto) {
+        nombreCompletoFinal = nombreCompleto;
+        console.log(`Filtro por nombre: ${nombreCompletoFinal}`);
       }
 
       const data = await obtenerResultados(
-        usuarioIdFinal,
-        minijuegoIdNum,
+        null, // No usamos ID, solo nombre
+        minijuegoId ? parseInt(minijuegoId) : null,
         curso || null,
         null,
-        creadorId
+        creadorId,
+        nombreCompletoFinal // Pasamos el nombre completo a la API
       );
 
       let resultadosProcesados = [];
@@ -130,16 +133,24 @@ const ResultadosTable = () => {
   // Función para exportar resultados
   const handleExport = async (tipoArchivo) => {
     try {
-      const usuarioIdNum = usuarioId ? parseInt(usuarioId) : null;
-      const minijuegoIdNum = minijuegoId ? parseInt(minijuegoId) : null;
+      // Si tenemos un estudiante seleccionado, usamos su nombre
+      let nombreCompletoFinal = null;
+      
+      if (estudianteSeleccionado) {
+        nombreCompletoFinal = estudianteSeleccionado.nombre;
+      } else if (nombreCompleto) {
+        nombreCompletoFinal = nombreCompleto;
+      }
 
+      // También pasamos el nombre completo para la exportación
       await exportarResultados(
         tipoArchivo,
-        usuarioIdNum,
-        minijuegoIdNum,
+        null, // No usamos ID, solo nombre
+        minijuegoId ? parseInt(minijuegoId) : null,
         curso || null,
         null,
-        creadorId
+        creadorId,
+        nombreCompletoFinal
       );
       setShowExportModal(false);
     } catch (error) {
@@ -158,6 +169,7 @@ const ResultadosTable = () => {
       // En modo general podemos mantener las selecciones
     } else if (nuevoModo === "porMinijuego") {
       setEstudianteSeleccionado(null);
+      setNombreCompleto(""); // Limpiar el filtro por nombre
     } else if (nuevoModo === "porEstudiante") {
       setMinijuegoSeleccionado("");
     }
@@ -173,6 +185,8 @@ const ResultadosTable = () => {
         setUsuarioId={setUsuarioId}
         setMinijuegoId={setMinijuegoId}
         setCurso={setCurso}
+        setNombreCompleto={setNombreCompleto} // Nueva prop para pasar el setter
+        nombreCompleto={nombreCompleto} // Nueva prop para pasar el valor actual
         cargarResultados={cargarResultados}
         setShowExportModal={setShowExportModal}
         
@@ -193,7 +207,7 @@ const ResultadosTable = () => {
         modoVisualizacion={modoVisualizacion}
         setModoVisualizacion={handleModoVisualizacionChange}
 
-        // Nuevas propiedades para cursos
+        // Propiedades para cursos
         cursosDisponibles={cursosDisponibles}
       />
 
