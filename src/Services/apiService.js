@@ -350,7 +350,7 @@ export const exportarResultados = async (
     if (nombreCompleto) params.append("nombreCompleto", nombreCompleto);
 
     // Construir la URL completa
-    const apiEndpoint = `${apiUrl}/api/resultados/exportar/${tipoArchivo}?${params.toString()}`;
+    const apiEndpoint = `${apiUrl}/api/Resultados/exportar/${tipoArchivo}?${params.toString()}`;
     console.log("URL de exportación:", apiEndpoint);
 
     // Iniciar la descarga del archivo
