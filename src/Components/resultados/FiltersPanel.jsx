@@ -44,11 +44,26 @@ const FiltersPanel = ({
   const [busquedaEstudiante, setBusquedaEstudiante] = useState('');
   const [mostrarDropdownEstudiantes, setMostrarDropdownEstudiantes] = useState(false);
   const dropdownRef = useRef(null);
+  
+  // Estado para mapear minijuegos a sus IDs
+  const [minijuegoMappings, setMinijuegoMappings] = useState({});
 
   // Extraer datos de los resultados cuando cargan para utilizarlos en los filtros
   useEffect(() => {
     if (resultados && resultados.length > 0) {
       console.log("Procesando resultados para extraer datos de filtrado...");
+      
+      // Crear mapeo de nombres de minijuegos a IDs
+      const mappings = {};
+      resultados.forEach(resultado => {
+        const nombre = resultado.tituloMinijuego || resultado.minijuego || "Sin nombre";
+        const id = resultado.minijuegoId;
+        if (nombre && id) {
+          mappings[nombre] = id;
+        }
+      });
+      setMinijuegoMappings(mappings);
+      console.log("Mapeo de minijuegos a IDs:", mappings);
       
       // Extraer minijuegos únicos
       const minijuegos = [...new Set(
@@ -74,7 +89,6 @@ const FiltersPanel = ({
         const nombre = resultado.nombreCompleto;
         
         if (nombre && !mapEstudiantes.has(nombre)) {
-          // Ya no guardamos el ID, solo el nombre
           mapEstudiantes.set(nombre, { nombre });
         }
       });
@@ -105,7 +119,20 @@ const FiltersPanel = ({
   
   // Aplicar filtros al hacer clic en el botón
   const aplicarFiltros = () => {
-    cargarResultados();
+    // IMPORTANTE: Aquí es donde usamos el minijuegoId correcto en lugar del nombre
+    if (minijuegoSeleccionado && minijuegoMappings[minijuegoSeleccionado]) {
+      // Si tenemos el ID para el minijuego seleccionado, usamos ese
+      setMinijuegoId(minijuegoMappings[minijuegoSeleccionado]);
+      console.log("Aplicando ID de minijuego:", minijuegoMappings[minijuegoSeleccionado]);
+    } else {
+      // Si no tenemos ID, limpiamos el minijuegoId
+      setMinijuegoId("");
+    }
+    
+    // Iniciamos la carga de resultados después de configurar los filtros
+    setTimeout(() => {
+      cargarResultados();
+    }, 0);
   };
   
   // Filtrar estudiantes según la búsqueda
@@ -117,23 +144,6 @@ const FiltersPanel = ({
   const handleMinijuegoChange = (e) => {
     const valor = e.target.value;
     setMinijuegoSeleccionado(valor);
-    
-    // Si hay valor, configurar el minijuegoId
-    if (valor) {
-      // Buscar el minijuego en los resultados para encontrar el ID correcto
-      const minijuegoSeleccionado = resultados.find(
-        r => (r.tituloMinijuego || r.minijuego) === valor
-      );
-      
-      if (minijuegoSeleccionado && minijuegoSeleccionado.minijuegoId) {
-        setMinijuegoId(minijuegoSeleccionado.minijuegoId);
-      } else {
-        // Si no encuentra ID, usar el nombre como valor
-        setMinijuegoId(valor);
-      }
-    } else {
-      setMinijuegoId('');
-    }
   };
   
   // Manejar cambio en selección de tipo de minijuego
