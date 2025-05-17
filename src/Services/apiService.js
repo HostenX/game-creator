@@ -348,10 +348,10 @@ export const exportarResultados = async (
     if (creadorId) params.append("creadorId", creadorId);
     if (nombreCompleto) params.append("nombreCompleto", nombreCompleto);
 
-    const url = `${apiUrl}/api/resultados/exportar/${tipoArchivo}?${params.toString()}`;
-    console.log("URL de exportación:", url);
+    const apiEndpoint = `${apiUrl}/api/resultados/exportar/${tipoArchivo}?${params.toString()}`;
+    console.log("URL de exportación:", apiEndpoint);
 
-    const response = await fetch(url, {
+    const response = await fetch(apiEndpoint, {
       method: "GET",
     });
 
@@ -375,14 +375,14 @@ export const exportarResultados = async (
     }
 
     // Crear URL para el blob y descargar
-    const url = window.URL.createObjectURL(blob);
+    const blobUrl = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = url;
+    link.href = blobUrl;
     link.setAttribute("download", filename);
     document.body.appendChild(link);
     link.click();
     link.remove();
-    window.URL.revokeObjectURL(url);
+    window.URL.revokeObjectURL(blobUrl);
     
     return { success: true };
   } catch (error) {
