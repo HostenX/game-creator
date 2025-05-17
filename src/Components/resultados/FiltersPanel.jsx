@@ -1,4 +1,4 @@
-// src/components/resultados/FiltersPanel.jsx - Versión mejorada con búsqueda
+// src/components/resultados/FiltersPanel.jsx - Versión actualizada con búsqueda por nombre
 import React, { useState, useEffect, useRef } from "react";
 
 /**
@@ -11,6 +11,8 @@ const FiltersPanel = ({
   setUsuarioId,
   setMinijuegoId,
   setCurso,
+  setNombreCompleto,  // Nuevo prop para setter del nombre
+  nombreCompleto,     // Nuevo prop para valor actual del nombre
   cargarResultados,
   setShowExportModal,
   mostrarGraficos,
@@ -118,7 +120,17 @@ const FiltersPanel = ({
     setEstudianteSeleccionado(estudiante);
     setUsuarioId(estudiante.id);
     setBusquedaEstudiante('');
+    setNombreCompleto(estudiante.nombre); // Sincronizar con el filtro por nombre
     setMostrarDropdownEstudiantes(false);
+  };
+  
+  // Manejar cambio en campo de búsqueda por nombre
+  const handleNombreCompletoChange = (e) => {
+    setNombreCompleto(e.target.value);
+    // Si estamos escribiendo, resetear la selección de estudiante específico
+    if (estudianteSeleccionado) {
+      setEstudianteSeleccionado(null);
+    }
   };
   
   // Limpiar selección de estudiante
@@ -126,6 +138,7 @@ const FiltersPanel = ({
     setEstudianteSeleccionado(null);
     setUsuarioId('');
     setBusquedaEstudiante('');
+    setNombreCompleto(''); // Limpiar también el filtro por nombre
   };
 
   return (
@@ -136,7 +149,28 @@ const FiltersPanel = ({
         
         {/* Selector de estudiante con búsqueda */}
         <div className="filtro-grupo">
-          <label>Estudiante:</label>
+          <label>Estudiante por nombre:</label>
+          <input
+            type="text"
+            value={nombreCompleto}
+            onChange={handleNombreCompletoChange}
+            placeholder="Buscar por nombre completo..."
+            className="input-with-clear"
+          />
+          {nombreCompleto && (
+            <button 
+              className="clear-button"
+              onClick={() => setNombreCompleto('')}
+              title="Limpiar búsqueda por nombre"
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        {/* Búsqueda avanzada con selector de estudiante */}
+        <div className="filtro-grupo">
+          <label>Buscar estudiante específico:</label>
           <div className="estudiante-selector" ref={dropdownRef}>
             <div className="input-with-clear">
               <input
@@ -148,7 +182,7 @@ const FiltersPanel = ({
                   setUsuarioId('');
                 }}
                 onClick={() => setMostrarDropdownEstudiantes(true)}
-                placeholder="Buscar estudiante..."
+                placeholder="Seleccionar estudiante..."
               />
               {(estudianteSeleccionado || busquedaEstudiante) && (
                 <button 
@@ -256,99 +290,6 @@ const FiltersPanel = ({
           </>
         )}
       </div>
-      
-      {/* CSS para el componente */}
-      <style jsx>{`
-        .filtros-container {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-          margin-bottom: 20px;
-        }
-        
-        .filtros-busqueda, .filtros-graficos {
-          background-color: var(--primary-dark);
-          padding: 15px;
-          border-radius: var(--border-radius);
-          box-shadow: var(--box-shadow);
-        }
-        
-        .filtro-grupo {
-          margin-bottom: 15px;
-        }
-        
-        .filtro-grupo label {
-          display: block;
-          margin-bottom: 5px;
-          font-weight: 500;
-        }
-        
-        .estudiante-selector {
-          position: relative;
-        }
-        
-        .input-with-clear {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-        
-        .input-with-clear input {
-          padding-right: 30px;
-          width: 100%;
-        }
-        
-        .clear-button {
-          position: absolute;
-          right: 10px;
-          background: none;
-          border: none;
-          color: #ccc;
-          font-size: 18px;
-          cursor: pointer;
-          padding: 0 5px;
-        }
-        
-        .clear-button:hover {
-          color: #fff;
-        }
-        
-        .estudiantes-dropdown {
-          position: absolute;
-          top: 100%;
-          left: 0;
-          width: 100%;
-          max-height: 200px;
-          overflow-y: auto;
-          background-color: var(--primary);
-          border: 1px solid var(--primary-light);
-          border-radius: 0 0 var(--border-radius) var(--border-radius);
-          z-index: 10;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        .estudiante-option {
-          padding: 8px 12px;
-          cursor: pointer;
-          transition: background-color 0.2s;
-        }
-        
-        .estudiante-option:hover, .estudiante-option.selected {
-          background-color: var(--accent);
-        }
-        
-        .no-resultados {
-          padding: 12px;
-          text-align: center;
-          color: #ccc;
-        }
-        
-        @media (max-width: 768px) {
-          .filtros-container {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
     </div>
   );
 };

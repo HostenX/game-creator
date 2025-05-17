@@ -334,7 +334,8 @@ export const exportarResultados = async (
   minijuegoId = null,
   curso = null,
   tipoMinijuego = null,
-  creadorId = null
+  creadorId = null,
+  nombreCompleto = null
 ) => {
   try {
     const params = new URLSearchParams();
@@ -345,6 +346,7 @@ export const exportarResultados = async (
     if (curso) params.append("curso", curso);
     if (tipoMinijuego) params.append("tipoMinijuego", tipoMinijuego);
     if (creadorId) params.append("creadorId", creadorId);
+    if (nombreCompleto) params.append("nombreCompleto", nombreCompleto);
 
     const response = await axios.get(
       `${apiUrl}/api/resultados/exportar/${tipoArchivo}?${params.toString()}`,
@@ -561,7 +563,8 @@ export const obtenerResultados = async (
   minijuegoId = null,
   curso = null,
   tipoMinijuego = null,
-  creadorId = null
+  creadorId = null,
+  nombreCompleto = null
 ) => {
   try {
     let url = `${apiUrl}/api/Resultados/filtrar?`;
@@ -573,6 +576,8 @@ export const obtenerResultados = async (
     if (tipoMinijuego)
       url += `tipoMinijuego=${encodeURIComponent(tipoMinijuego)}&`;
     if (creadorId) url += `creadorId=${encodeURIComponent(creadorId)}&`;
+    if (nombreCompleto)
+      url += `nombreCompleto=${encodeURIComponent(nombreCompleto)}&`;
 
     // Eliminar el último '&' si existe
     url = url.endsWith("&") ? url.slice(0, -1) : url;
