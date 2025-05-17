@@ -578,7 +578,18 @@ export const obtenerResultados = async (
   try {
     let url = `${apiUrl}/api/Resultados/filtrar?`;
 
+    // Registro de parámetros de la petición para depuración
+    console.log("Parámetros de la solicitud:", {
+      usuarioId,
+      curso,
+      minijuegoId,
+      tipoMinijuego,
+      creadorId,
+      nombreCompleto
+    });
+
     // Agregar los parámetros en el orden correcto según el endpoint
+    // IMPORTANTE: Confirma que estos son los nombres de parámetros exactos que espera tu API
     if (usuarioId) url += `usuarioId=${encodeURIComponent(usuarioId)}&`;
     if (curso) url += `curso=${encodeURIComponent(curso)}&`;
     if (minijuegoId) url += `minijuegoId=${encodeURIComponent(minijuegoId)}&`;
@@ -589,8 +600,9 @@ export const obtenerResultados = async (
     // Eliminar el último '&' si existe
     url = url.endsWith("&") ? url.slice(0, -1) : url;
 
-    console.log("URL de solicitud:", url);
+    console.log("URL de solicitud completa:", url);
 
+    // Hacer la solicitud a la API
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -604,6 +616,10 @@ export const obtenerResultados = async (
     }
 
     const data = await response.json();
+    
+    // Registro de la respuesta para depuración
+    console.log("Datos recibidos:", data);
+    
     return data;
   } catch (error) {
     console.error("Error al obtener resultados:", error);

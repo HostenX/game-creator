@@ -8,7 +8,7 @@ const FiltersPanel = ({
   setUsuarioId,
   setMinijuegoId,
   setCurso,
-  curso, // Añadir esta prop - era la que faltaba
+  curso,
   setNombreCompleto,
   nombreCompleto,
   setTipoMinijuego,
@@ -74,8 +74,8 @@ const FiltersPanel = ({
         const nombre = resultado.nombreCompleto;
         
         if (nombre && !mapEstudiantes.has(nombre)) {
-          const id = resultado.usuarioId || resultado.$id || resultado.id || nombre;
-          mapEstudiantes.set(nombre, { id, nombre });
+          // Ya no guardamos el ID, solo el nombre
+          mapEstudiantes.set(nombre, { nombre });
         }
       });
       
@@ -117,7 +117,23 @@ const FiltersPanel = ({
   const handleMinijuegoChange = (e) => {
     const valor = e.target.value;
     setMinijuegoSeleccionado(valor);
-    setMinijuegoId(valor ? valor : '');
+    
+    // Si hay valor, configurar el minijuegoId
+    if (valor) {
+      // Buscar el minijuego en los resultados para encontrar el ID correcto
+      const minijuegoSeleccionado = resultados.find(
+        r => (r.tituloMinijuego || r.minijuego) === valor
+      );
+      
+      if (minijuegoSeleccionado && minijuegoSeleccionado.minijuegoId) {
+        setMinijuegoId(minijuegoSeleccionado.minijuegoId);
+      } else {
+        // Si no encuentra ID, usar el nombre como valor
+        setMinijuegoId(valor);
+      }
+    } else {
+      setMinijuegoId('');
+    }
   };
   
   // Manejar cambio en selección de tipo de minijuego
@@ -133,9 +149,10 @@ const FiltersPanel = ({
   // Manejar selección de estudiante
   const handleEstudianteSelect = (estudiante) => {
     setEstudianteSeleccionado(estudiante);
-    setUsuarioId(estudiante.id || ''); // Si hay ID, lo usamos
+    // No configurar usuarioId, solo el nombre
+    setUsuarioId('');
     setBusquedaEstudiante('');
-    setNombreCompleto(estudiante.nombre); // Siempre establecemos el nombre
+    setNombreCompleto(estudiante.nombre); 
     setMostrarDropdownEstudiantes(false);
   };
   
@@ -175,6 +192,7 @@ const FiltersPanel = ({
                   className="clear-button"
                   onClick={limpiarEstudianteSeleccionado}
                   title="Limpiar selección"
+                  type="button"
                 >
                   ×
                 </button>
@@ -187,7 +205,9 @@ const FiltersPanel = ({
                   estudiantesFiltrados.map((estudiante, index) => (
                     <div 
                       key={`estudiante-option-${index}`}
-                      className={`estudiante-option ${estudianteSeleccionado?.id === estudiante.id ? 'selected' : ''}`}
+                      className={`estudiante-option ${
+                        estudianteSeleccionado?.nombre === estudiante.nombre ? 'selected' : ''
+                      }`}
                       onClick={() => handleEstudianteSelect(estudiante)}
                     >
                       {estudiante.nombre}
@@ -217,7 +237,7 @@ const FiltersPanel = ({
           </select>
         </div>
         
-        {/* Selector de tipo de minijuego - Nuevo */}
+        {/* Selector de tipo de minijuego */}
         <div className="filtro-grupo">
           <label>Tipo de Minijuego:</label>
           <select 
@@ -237,7 +257,7 @@ const FiltersPanel = ({
         <div className="filtro-grupo">
           <label>Curso:</label>
           <select 
-            value={curso || ""} // Usar la prop curso aquí
+            value={curso || ""} 
             onChange={handleCursoChange}
           >
             <option value="">-- Todos los Cursos --</option>
@@ -250,13 +270,18 @@ const FiltersPanel = ({
         </div>
 
         {/* Botones de acción */}
-        <button className="filtrar-btn" onClick={aplicarFiltros}>
+        <button 
+          className="filtrar-btn" 
+          onClick={aplicarFiltros}
+          type="button"
+        >
           Aplicar Filtros
         </button>
 
         <button
           className="exportar-btn"
           onClick={() => setShowExportModal(true)}
+          type="button"
         >
           Exportar Resultados
         </button>
@@ -269,6 +294,7 @@ const FiltersPanel = ({
         <button
           className={`graficos-btn ${mostrarGraficos ? 'active' : ''}`}
           onClick={() => setMostrarGraficos(!mostrarGraficos)}
+          type="button"
         >
           {mostrarGraficos ? "Ocultar Gráficos" : "Mostrar Gráficos"}
         </button>
@@ -288,7 +314,11 @@ const FiltersPanel = ({
             </div>
             
             {/* Botón para actualizar visualización */}
-            <button className="filtrar-btn" onClick={aplicarFiltros}>
+            <button 
+              className="filtrar-btn" 
+              onClick={aplicarFiltros}
+              type="button"
+            >
               Actualizar Visualización
             </button>
           </>

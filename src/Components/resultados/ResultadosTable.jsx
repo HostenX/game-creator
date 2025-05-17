@@ -14,6 +14,7 @@ import "./FilterStyles.css"; // Importamos los estilos
 const ResultadosTable = () => {
   // Estados para datos de resultados
   const [resultados, setResultados] = useState([]);
+  const [resultadosFiltrados, setResultadosFiltrados] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -68,9 +69,52 @@ const ResultadosTable = () => {
     }
   }, [creadorId, reload]);
 
+  // Aplicar filtros localmente también cuando cambian
+  useEffect(() => {
+    aplicarFiltrosLocales();
+  }, [minijuegoSeleccionado, nombreCompleto, curso, tipoMinijuego, resultados]);
+
+  // Esta función aplica filtros localmente para mejorar la experiencia
+  const aplicarFiltrosLocales = () => {
+    if (!resultados || resultados.length === 0) {
+      setResultadosFiltrados([]);
+      return;
+    }
+
+    let filtered = [...resultados];
+
+    // Filtro por nombre completo
+    if (nombreCompleto) {
+      filtered = filtered.filter(
+        r => r.nombreCompleto && r.nombreCompleto.includes(nombreCompleto)
+      );
+    }
+
+    // Filtro por minijuego (usando el nombre)
+    if (minijuegoSeleccionado) {
+      filtered = filtered.filter(
+        r => (r.tituloMinijuego || r.minijuego) === minijuegoSeleccionado
+      );
+    }
+
+    // Filtro por curso
+    if (curso) {
+      filtered = filtered.filter(r => r.curso === curso);
+    }
+
+    // Filtro por tipo de minijuego
+    if (tipoMinijuego) {
+      filtered = filtered.filter(r => r.tipoMinijuego === tipoMinijuego);
+    }
+
+    setResultadosFiltrados(filtered);
+  };
+
   // Función para cargar resultados desde la API
   const cargarResultados = async () => {
     setLoading(true);
+    setError(null); // Limpiar errores anteriores
+    
     try {
       // Preparar parámetros para alinearse con la API
       let nombreCompletoFinal = null;
@@ -85,7 +129,7 @@ const ResultadosTable = () => {
       const data = await obtenerResultados(
         usuarioId ? parseInt(usuarioId) : null,
         curso || null,
-        minijuegoId ? minijuegoId : null,
+        minijuegoId || null, // Cambiado para usar ID o nombre según sea necesario
         tipoMinijuego || null,
         creadorId,
         nombreCompletoFinal
@@ -104,6 +148,7 @@ const ResultadosTable = () => {
       }
 
       setResultados(resultadosProcesados);
+      setResultadosFiltrados(resultadosProcesados); // Inicialmente mostrar todos
       console.log("Resultados cargados:", resultadosProcesados.length);
 
       // Extraer datos para opciones de filtrado
@@ -125,6 +170,7 @@ const ResultadosTable = () => {
     } catch (err) {
       console.error("Error al cargar resultados:", err);
       setError("Error al cargar los resultados. Por favor, intenta de nuevo.");
+      setResultadosFiltrados([]); // Limpiar resultados en caso de error
     } finally {
       setLoading(false);
     }
@@ -146,7 +192,7 @@ const ResultadosTable = () => {
       await exportarResultados(
         tipoArchivo,
         usuarioId ? parseInt(usuarioId) : null,
-        minijuegoId ? minijuegoId : null,
+        minijuegoId || null,
         curso || null,
         tipoMinijuego || null,
         creadorId,
@@ -178,6 +224,16 @@ const ResultadosTable = () => {
 
   // Forzar recarga de datos
   const recargarDatos = () => {
+    // Limpiar todos los filtros
+    setMinijuegoSeleccionado("");
+    setMinijuegoId("");
+    setCurso("");
+    setTipoMinijuego("");
+    setNombreCompleto("");
+    setEstudianteSeleccionado(null);
+    setUsuarioId("");
+    
+    // Recargar datos
     setReload(!reload);
   };
 
@@ -225,7 +281,7 @@ const ResultadosTable = () => {
       {/* Panel de Gráficos */}
       <ChartPanel
         // Propiedades generales
-        resultados={resultados}
+        resultados={resultadosFiltrados} // Usar los resultados filtrados
         mostrarGraficos={mostrarGraficos}
         
         // Propiedades para visualización por minijuego
@@ -247,9 +303,9 @@ const ResultadosTable = () => {
       {/* Mensaje de error si existe */}
       {error && <div className="error-message">{error}</div>}
 
-      {/* Tabla de Datos */}
+      {/* Tabla de Datos - Usar los resultados filtrados */}
       <DataTable
-        resultados={resultados}
+        resultados={resultadosFiltrados}
         loading={loading}
         error={error}
         onReload={recargarDatos}
